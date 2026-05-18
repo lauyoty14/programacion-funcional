@@ -1,0 +1,231 @@
+Seccion 2: 
+ejercicio 5)
+e)
+prop: 
+para todo n :: Nombre . para todo n1 :: Nombre .
+para todo n2 :: Nombre . para todo n3 :: Nombre .
+largoDePlanilla (planillaDeIntegrantes (Investigador n (Becario n1) (Becario n2) (Becario n3)))
+= cantidadDeIntegrantes (Investigador n (Becario n1) (Becario n2) (Becario n3))?
+
+dem : 
+sea m :: Nombre. m1 :: Nombre. m2 :: Nombre. m3 :: Nombre. Qvq:
+largoDePlanilla (planillaDeIntegrantes (Investigador m (Becario m1) (Becario m2) (Becario m3)))
+= cantidadDeIntegrantes (Investigador m (Becario m1) (Becario m2) (Becario m3)) ?
+
+izq : 
+largoDePlanilla (planillaDeIntegrantes (Investigador m (Becario m1) (Becario m2)
+(Becario m3)))
+=                                               (def planillaDeIntegrantes, n <- m, e1 <- (Becario m1), 
+                                                e2 <- (Becario m2), e3 <- (Becario m3))
+largoDePlanilla (Registro m (juntarPlanillas (planillaDeIntegrantes (Becario m1) (juntarPlanillas (
+    (planillaDeIntegrantes (Becario m2) (planillaDeIntegrantes (Becario m3))))))))
+=                                                       (def planillaDeIntegrantes, caso base, m <- m3)
+largoDePlanilla (Registro m (juntarPlanillas (planillaDeIntegrantes (Becario m1) (juntarPlanillas (
+    (planillaDeIntegrantes (Becario m2) (Registro m3 Fin)))))))
+=                                                       (def planillaDeIntegrantes, caso base, m <- m2)
+largoDePlanilla (Registro m (juntarPlanillas (planillaDeIntegrantes (Becario m1) (juntarPlanillas (
+    (Registro m2 Fin) (Registro m3 Fin))))))
+=                                                       (def planillaDeIntegrantes, caso base, m <- m1)
+largoDePlanilla (Registro m (juntarPlanillas (Registro m1 Fin) (juntarPlanillas ((Registro m2 Fin) 
+                                                                                (Registro m3 Fin)))))
+=                                       (def juntarPlanillas, n <- m2, p <- Fin, p2 <- (Registro m3 Fin))
+largoDePlanilla (Registro m (juntarPlanillas (Registro m1 Fin) (Registro m2 (
+                                                                juntarPlanillas Fin (Registro m3 Fin)))))
+=                                               (def juntarPlanillas, caso base, p <- (Registro m3 Fin))
+largoDePlanilla (Registro m (juntarPlanillas (Registro m1 Fin) (Registro m2 (Registro m3 Fin))))
+=                                               (def juntarPlanillas, n <- m1, p <- Fin, p2 <- 
+                                                                        (Registro m2 (Registro m3 Fin)))
+largoDePlanilla (Registro m (Registro m1 (juntarPlanillas Fin (Registro m2 (Registro m3 Fin)))))
+=                                                       (def juntarPlanillas, caso base, p <- 
+                                                                        (Registro m2 (Registro m3 Fin)))
+largoDePlanilla (Registro m (Registro m1 (Registro m2 (Registro m3 Fin))))
+=                                               (def largoDePlanilla p <- (Registro m1 (Registro m2 
+                                                                                    (Registro m3 Fin))))
+1 + (largoDePlanilla (Registro m1 (Registro m2 (Registro m3 Fin))))
+=                                               (def largoDePlanilla p <- (Registro m2 (Registro m3 Fin)))
+1 + 1 + (largoDePlanilla (Registro m2 (Registro m3 Fin)))
+=                                                           (def largoDePlanilla p <- (Registro m3 Fin))
+1 + 1 + 1 + (largoDePlanilla (Registro m3 Fin))
+=                                                                          (def largoDePlanilla p <- Fin)
+1 + 1 + 1 + 1 + (largoDePlanilla Fin)
+=                                                                          (def largoDePlanilla caso base)
+1 + 1 + 1 + 1 + 0
+=                                                                                           (aritmetica)
+4
+
+der: 
+cantidadDeIntegrantes (Investigador m (Becario m1) (Becario m2) (Becario m3))
+=                                                          (def cantidadDeIntegrantes, e1 <- (Becario m1)
+                                                            , e2 <- (Becario m2), e3 <- (Becario m3))
+1 + (cantidadDeIntegrantes (Becario m1)) + (cantidadDeIntegrantes (Becario m2)) + 
+(cantidadDeIntegrantes (Becario m3))
+=                                                                   (def cantidadDeIntegrantes, n <- m1)
+1 + 1 + (cantidadDeIntegrantes (Becario m2)) + (cantidadDeIntegrantes (Becario m3))
+=                                                                   (def cantidadDeIntegrantes, n <- m2)
+1 + 1 + 1 + (cantidadDeIntegrantes (Becario m3))
+=                                                                   (def cantidadDeIntegrantes, n <- m3)
+1 + 1 + 1 + 1
+=                                                                                           (aritmetica)
+4
+como ambos lados reducen a lo mismo son equivalentes
+
+-------------------------------------------------------------------------------------------------------
+Seccion 3 :
+
+ejercicio 1)
+regla base: para todo x :: a, (Habitacion x) :: Dungeon a
+reglas inductivas: Si d :: Dungeon a, m :: (Maybe a), entonces (Pasaje m d) :: Dungeon a.
+Si m :: Maybe a, d :: Dungeon a y d' :: Dungeon a, entonces (Bifurcacion m d d') :: Dungeon a
+menor: Dungeon a es el menor conjunto que satisface las reglas anteriores
+
+ejercicio 2)
+forma esquematica de Dungeon:
+    *caso base: F Habitacion a = ... a ...
+    *caso inductivo 1: F (Pasaje a d) = ... a ... (F d) ...
+    *caso inductivo 2: F (Bifurcacion a d d') = ... a ... (F d) ... (F d') ...
+
+ejercicio 3)
+a)
+cantidadDeBifurcaciones :: Dungeon a -> Int
+cantidadDeBifurcaciones (Habitacion a) = 0
+cantidadDeBifurcaciones (Pasaje _ d) = cantidadDeBifurcaciones d
+cantidadDeBifurcaciones (Bifurcacion _ d d') = 1 + cantidadDeBifurcaciones d + cantidadDeBifurcaciones d'
+b)
+cantidadDePuntosInteresantes :: Dungeon a -> Int
+cantidadDePuntosInteresantes (Habitacion _) = 1
+cantidadDePuntosInteresantes (Pasaje _ d) = 1 + cantidadDePuntosInteresantes d
+cantidadDePuntosInteresantes (Bifurcacion _ d d') = 1 + cantidadDePuntosInteresantes d +
+                                                     cantidadDePuntosInteresantes d'
+c)
+cantidadDePuntosVacios :: Dungeon a -> Int
+cantidadDePuntosVacios (Habitacion _) = 0
+cantidadDePuntosVacios (Pasaje a d) = 
+    case a of
+        Just _ -> cantidadDePuntosVacios d
+        Nothing -> 1 + cantidadDePuntosVacios d                                     
+cantidadDePuntosVacios (Bifurcacion a d d') =
+    case a of
+        Just _ -> cantidadDePuntosVacios d + cantidadDePuntosVacios d'
+        Nothing -> 1 + cantidadDePuntosVacios d + cantidadDePuntosVacios d'
+d)
+cantidadDePuntosCon :: a -> Dungeon a -> Int
+cantidadDePuntosCon a (Habitacion n) = if a == n 
+                                        then 1
+                                        else 0
+cantidadDePuntosCon a (Pasaje n d) = 
+    case n of
+        Nothing -> cantidadDePuntosCon a d
+        Just m -> if a == m
+                    then 1 + cantidadDePuntosCon a d
+                  else cantidadDePuntosCon a d
+cantidadDePuntosCon a (Bifurcacion n d d') = 
+    case n of 
+        Nothing -> cantidadDePuntosCon a d + cantidadDePuntosCon a d'
+        Just m -> if a == m
+                    then 1 + cantidadDePuntosCon a d + cantidadDePuntosCon a d' 
+                  else cantidadDePuntosCon a d + cantidadDePuntosCon a d'
+e)
+esLineal :: Dungeon a -> Bool
+esLineal (Habitacion _) = True
+esLineal (Pasaje _ d) = esLineal d
+esLineal (Bifurcacion _ _ _) = False
+f)
+llenoDe :: a -> Dungeon a -> Bool
+llenoDe x (Habitacion a) = x == a 
+llenoDe x (Pasaje a d) = 
+    case x of
+        Nothing -> False
+        Just y -> y == a && llenoDe x d
+llenoDe x (Bifurcacion a d d') = 
+    case x of
+        Nothing -> False 
+        Just y -> y == a && llenoDe x d && llenoDe x d' 
+
+ejercicio 4)
+a) prop: para todo x :: a .
+cantidadDePuntosVacios (Habitacion x) = 0?
+dem: sea y :: a. Qvq cantidadDePuntosVacios (Habitacion y) = 0 ?
+izq:
+cantidadDePuntosVacios (Habitacion y)
+=                                                               (def cantidadDePuntosVacios, caso base)
+0 
+como al reducir la primer expresion da la segunda, entonces son equivalentes
+b) prop : cantidadDePuntosVacios (Pasaje Nothing (Habitacion Joyas)) = 1 ?
+dem: reducimos la primer expresion para ver si es igual a la segunda 
+izq: 
+cantidadDePuntosVacios (Pasaje Nothing (Habitacion Joyas))
+=                                                              (def cantidadDePuntosVacios, a <- Nothing,
+                                                                d <- (Habitacion Joyas))
+1 + cantidadDePuntosVacios (Habitacion Joyas)
+=                                                                (def cantidadDePuntosVacios, caso base)
+1 + 0
+=                                                                                           (aritmetica)
+1
+c) prop: para todo y :: a . para todo x :: a . 
+cantidadDePuntosVacios (Pasaje (Just y) (Habitacion x)) = 0?
+dem: sea n :: a y m :: a. Qvq cantidadDePuntosVacios (Pasaje (Just n) (Habitacion m)) = 0?
+izq:
+cantidadDePuntosVacios (Pasaje (Just n) (Habitacion m))
+=                                       (def cantidadDePuntosVacios a <- (Just n), d <- (Habitacion m))
+cantidadDePuntosVacios (Habitacion m)
+=                                                                (def cantidadDePuntosVacios, caso base)
+0
+d) prop: cantidadDePuntosVacios (Bifurcacion Nothing (Pasaje Nothing (Habitacion Joyas)) 
+    (Pasaje (Just Oro) (Habitacion Cofre))) = 2?
+dem: reducimos la primer expresion para ver si es equivalente a la segunda
+izq:
+cantidadDePuntosVacios (Bifurcacion Nothing (Pasaje Nothing (Habitacion Joyas)) 
+(Pasaje (Just Oro) (Habitacion Cofre)))
+=                 (def cantidadDePuntosVacios, a <- (Nothing), d <- (Pasaje Nothing (Habitacion Joyas)),
+                    d' <- (Pasaje (Just Oro) (Habitacion Cofre)))
+1 + (cantidadDePuntosVacios (Pasaje Nothing (Habitacion Joyas))) + (cantidadDePuntosVacios 
+    (Pasaje (Just Oro) (Habitacion Cofre)))
+=                                    (def cantidadDePuntosVacios, a <- Nothing, d <- (Habitacion Joyas))
+1 + 1 + (cantidadDePuntosVacios (Habitacion Joyas)) + (cantidadDePuntosVacios (Pasaje (Just Oro) 
+    (Habitacion Cofre))) 
+=                                                               (def cantidadDePuntosVacios, caso base)
+1 + 1 + 0 + (cantidadDePuntosVacios (Pasaje (Just Oro) (Habitacion Cofre)))
+=                                  (def cantidadDePuntosVacios, a <- (Just Oro), d <- (Habitacion Cofre))
+1 + 1 + 0 + cantidadDePuntosVacios (Habitacion Cofre)
+=                                                                 (def cantidadDePuntosVacios, caso base)
+1 + 1 + 0 + 0
+=                                                                                            (aritmetica)
+2
+e) prop: para todo z :: a . para todo y :: a . para todo x :: a .
+cantidadDePuntosVacios (Bifurcacion Nothing (Pasaje Nothing (Habitacion z)) 
+    (Pasaje (Just y) (Habitacion x))) = 2?
+dem: sean n :: a. m :: a. o :: a. Qvq cantidadDePuntosVacios (Bifurcacion Nothing (Pasaje Nothing
+    (Habitacion n)) (pasaje (Just m) (Habitacion o))) = 2?
+cantidadDePuntosVacios (Bifurcacion Nothing (Pasaje Nothing (Habitacion n)) (Pasaje (Just m) 
+    (Habitacion o)))
+=                       (def cantidadDePuntosVacios, a <- Nothing, d <- (Pasaje Nothing (Habitacion n)), 
+                            d' <- (Pasaje (Just m) (Habitacion o)))
+1 + (cantidadDePuntosVacios (Pasaje Nothing (Habitacion n)) + 
+    (cantidadDePuntosVacios (Pasaje (Just m) (Habitacion o))))
+=                                       (def cantidadDePuntosVacios, a <- Nothing, d <- (Habitacion n))
+1 + 1 + cantidadDePuntosVacios (Habitacion n) + cantidadDePuntosVacios (Pasaje (Just m) (Habitacion o))
+=                                                               (def cantidadDePuntosVacios, caso base)
+1 + 1 + 0 + cantidadDePuntosVacios (Pasaje (Just m) (Habitacion o))
+=                                       (def cantidadDePuntosVacios, a <- (Just m), d <- (Habitacion o))
+1 + 1 + 0 + cantidadDePuntosVacios (Habitacion o)
+=                                                               (def cantidadDePuntosVacios, caso base)
+1 + 1 + 0 + 0
+=                                                                                           (aritmetica)
+2
+ejercicio 5)
+a) prop: cantidadDePuntosCon (Criatura Troll) (Habitacion (Objeto Oro)) = 0 ?
+dem: reducimos el lado izquierdo para ver si es equivalente al derecho
+cantidadDePuntosCon (Criatura Troll) (Habitacion (Objeto Oro))}
+= (def cantidadDePuntosCon, a <- (Criatura Troll), n <- (Objeto Oro))
+0
+b) prop: cantidadDePuntosCon (Criatura Troll) (Pasaje (Just (Criatura Troll)) (Habitacion (Objeto Oro))) = 1?
+dem: reducimos el lado izquierdo para ver si es equivalente al derecho
+izq:
+cantidadDePuntosCon (Criatura Troll) (Pasaje (Just (Criatura Troll)) (Habitacion (Objeto Oro)))
+=                                       (def cantidadDePuntosCon, a <- (Criatura Troll), n <- (Just (Criatura Troll)), 
+                                                                                    d <- (Habitacion (Objeto Oro)))
+1 + cantidadDePuntosCon (Criatura Troll) (Habitacion (Objeto Oro))
+=                                                 (def cantidadDePuntosCon, a <- (Criatura Troll), n <- (Objeto Oro))
+1 + 0 
+=                                                                                                       (aritmetica)
+1

@@ -1,0 +1,516 @@
+Seccion i
+ejercicio 1)
+a) 
+length :: [a] -> Int
+length [] = 0
+length (x:xs) = 1 + length xs
+b)
+sum :: [Int] -> Int
+sum [] = 0
+sum (x:xs) = x + sum xs
+c)
+product :: [Int] -> Int
+product [] = 1
+product (x:xs) = x * product xs
+d)
+concat :: [[a]] -> [a]
+concat [] = []
+concat (xs:xss) = xs ++ concat xss
+e)
+elem :: Eq a => a -> [a] -> Bool
+elem _ [] = False
+elem a (x:xs) = a == x || elem a xs
+f) 
+all :: (a -> Bool) -> [a] -> Bool
+all _ [] = True
+all f (x:xs) = f x && (all f xs)
+g)
+any :: (a -> Bool) -> [a] -> Bool
+any _ [] = False
+any f (x:xs) = f x || any f xs 
+h)
+count :: (a -> Bool) -> [a] -> Int
+count _ [] = 0 
+count f (x:xs) = unoSiCeroSino (f x) + count f xs
+
+unoSiCeroSino :: Bool -> Int
+unoSiCeroSino True = 1
+unoSiCeroSino False = 0
+i)
+subset :: Eq a => [a] -> [a] -> Bool
+subset [] _ = True
+subset (x:xs) ys = elem x ys && subset xs ys 
+j)
+(++) :: [a] -> [a] -> [a]
+(++) [] ys = ys
+(++) (x:xs) ys = x : ((++) xs ys)
+k)
+reverse :: [a] -> [a]
+reverse [] = []
+reverse (x:xs) = reverse xs ++ [x]
+l)
+zip :: [a] -> [b] -> [(a,b)]
+zip [] _ = []
+zip _ [] = []
+zip (x:xs) (y:ys) = (x,y) : zip xs ys 
+m)
+unzip :: [(a,b)] -> ([a],[b])
+unzip [] = ([], [])
+unzip (x:xs) = sumarTupla x unzip
+
+sumarTupla :: (a,b) -> ([a],[b]) -> ([a],[b])
+sumarTupla ab (as,bs) = (fst(ab) : as , snd(ab) : bs)
+
+ejercicio 2)
+a) prop: para todo xs. para todo ys. length (xs ++ ys) = length xs + length ys?
+dem: sea as :: [a] y bs :: [a], aplico induccion estructural sobre as
+
+caso as = []) length ([] ++ bs) = length [] + length bs?
+izq:
+length ([] ++ bs) 
+=                                                           (def ++, caso base)
+length bs
+--------------------------------------------------------------------------------
+der:
+length [] ++ length bs
+=                                                           (def length, caso base)
+0 + length bs
+=                                                                       (aritmetica)
+length bs
+
+Hi : length (as ++ bs) = length as + length bs
+Te : length ((a:as) ++ bs) = length (a:as) + length bs
+caso as = (a:as)) length (as ++ bs) = length (a:as) ++ length bs 
+izq:
+length ((a:as) ++ bs)
+=                                                                       (def ++, x <- a, xs <- as, ys <- bs)
+length (a : (as ++ bs))
+=                                                                       (def length, xs <- ((++) as bs))
+1 + length (as ++ bs)
+=                                                                                                   (por Hi)
+1 + (length as + length bs)
+------------------------------------------------------------------------------------------------------------
+der:
+length (a:as) + length bs
+=                                                                                       (def length, xs <- as)
+(1 + length as) + length bs
+=                                                                                   (por asociativa de la suma)
+1 + (length as + length)
+------------------------------------------------------------------------------------------------------------
+b) prop: para todo xs. para todo ys. para todo zs. (xs ++ ys) ++ zs = xs ++ (ys ++ zs)?
+dem: sean as, bs, cs listas cualquiera. por induccion estructural sobre as:
+
+caso as = []) ([] ++ bs) ++ cs = [] ++ (bs ++ cs)
+izq:
+([] ++ bs) ++ cs
+=                                                                                           (def ++, caso base)
+bs ++ cs
+
+der: 
+[] ++ (bs ++ cs) 
+=                                                                                           (def ++, caso base)
+bs ++ cs
+se cumple para el caso base
+
+caso as = (x:xs)) ((x:xs) ++ bs) ++ cs = (x:xs) ++ (bs ++ cs)
+Hi = (xs ++ bs) ++ cs = xs ++ (bs ++ cs)
+Ti = ((x:xs) ++ bs) ++ cs = (x:xs) ++ (bs ++ cs)?
+izq:
+((x:xs) ++ bs) ++ cs
+=                                                                            (def ++, x <- a, xs <- as, ys <- bs)
+(x : (xs ++ bs)) ++ cs
+=                                                                     (def ++, x <- x, xs <- (xs ++ bs), ys <- cs)
+x : ((xs ++ bs) ++ cs)
+=                                                                                                 (por hipotesis)
+x : (xs ++ (bs ++ cs))
+der :
+(x:xs) ++ (bs ++ cs)
+=                                                                    (def ++, x <- x, xs <- xs, ys <- (bs ++ cs))
+x : (xs ++ (bs ++ cs))
+Como ambos lados reducen a la misma expresión, el caso inductivo es válido.
+------------------------------------------------------------------------------------------------------------
+c) prop: count (const True) = length?
+dem: por ppio de ext. para todo xs :: [a]. count (const True) xs = length xs? por induccion estructural en xs:
+caso xs = []) count (const True) [] = length []?
+izq:
+count (const True) []
+=                                                                                           (def cout, caso base)
+0
+der:
+length []
+=                                                                                         (def length, caso base)
+0
+como ambos lados reducen a lo mismo son equivalentes
+caso xs = (y:ys)) count (const True) (y:ys) = length (y:ys)
+Hi = count (const True) ys = length ys!
+Te = count (const True) (y:ys) = length (y:ys) ?
+izq:
+count (const True) (y:ys)
+=                                                                (def count, f <- (const True), x <- y, xs <- ys)
+unoSiCeroSino (const True y) + count (const True) ys
+
+=                                                                                 (def const, x <- True, y <- ys)
+unoSiCeroSino (True) + count (const True) ys
+=                                                                                  (def unoSiCeroSino, caso True)
+1 + count (const True) ys
+=                                                                                                 (por hipotesis)
+1 + length ys
+der:
+length (y:ys)
+=                                                                                          (def length, xs <- ys)
+1 + length ys
+como ambos lados reducen a lo mismo la induccion se cumple.
+------------------------------------------------------------------------------------------------------------
+d) prop: elem = any . (==)
+dem: por ppio de ext. para todo x. para todo ys. elem x ys = any . (==) x ys. por induccion estructural en ys
+caso ys = []) elem x [] = any . (==) x []
+izq:
+elem x []
+=                                                                                          (def elem, caso base)
+False
+der:
+any . (==) x []
+=                                                                          (def (.), f <- any, g <- (==), x <- x)
+any ((==) x) []
+=                                                                                            (def any, caso base)
+False
+como reducen lo mismo, se cumple la equivalencia
+caso ys = (z:zs)) elem x (z:zs) = any . (==) x (z:zs)
+Hi = elem x zs = any . (==) x zs
+Te = elem x (z:zs) = any . (==) x (z:zs)
+izq:
+elem x (z:zs)
+=                                                                            (def elem, a <- x, x <- z, xs <- zs)
+x == z || elem x zs
+=                                                                                                 (por hipotesis)
+x == z || any . (==) x zs
+=                                                                        (def (.), f <- (any), g <- (==), x <- x)
+x == z || any (== x) zs 
+der: 
+any . (==) x (z:zs)
+=                                                                        (def (.), f <- (any), g <- (==), x <- x)
+any (== x) (z:zs)
+=                                                                        (def any, f <- (== x), x <- z, xs <- zs)
+x == z || any (== x) zs
+como ambos lados reducen a lo mismo la induccion es valida
+------------------------------------------------------------------------------------------------------------
+e) prop: para todo x. any (elem x) = elem x . concat?
+dem: por ppio de ext. para todo x. para todo xs. any (elem x) xs = elem x . concat xs?
+sea yss una lista de listas. any (elem x) ys = elem x . concat yss? por induccion estructural sobre yss.
+caso yss = []) any (elem x) [] = elem x . concat [] ?
+izq:
+any (elem x) []
+=                                                                                            (def any, caso base)
+False
+der:
+elem x . concat []
+=                                                                    (def (.), f <- elem x, g <- concat, x <- [])
+elem x (concat [])
+=                                                                                         (def concat, caso base)
+elem x []
+=                                                                                           (def elem, caso base)
+False
+como reducen a lo mismo, la equivalencia se cumple
+caso yss = (zs:zss)) any (elem x) (zs:zss) = elem x . concat (zs:zss) ?
+Hi = any (elem x) zss = elem x . concat zss
+Te = any (elem x) (zs:zss) = elem x . concat (zs:zss)
+izq:
+any (elem x) (zs:zss)
+=                                                                        (def any, f <- (elem x), x <- zs, xs <- zss)
+(elem x) zs || any (elem x) zss
+=                                                                                                     (por hipotesis)
+(elem x) zs || elem x . concat zss
+der:
+elem x . concat (zs:zss)
+=                                                                 (der (.) f <- (elem x), g <- concat, x <- (zs:zss))
+elem x (concat (zs:zss))
+=                                                                                  (def concat, xs <- zs, xss <- zss)
+elem x (zs ++ concat zss)
+=                                                               (por lema elem a (xs ++ ys) = elem a xs || elem a ys)
+elem x zs || elem x (concat zss)
+=                                                                                          (def (.), sentido inverso)
+elem x zs || elem x . concat zss
+--------------------------------------------------------------------------------------------------------------------
+f)prop: para todo xs. para todo ys. subset xs ys = all (flip elem ys) xs ?
+dem: sean zs ws dos listas cualquiera. Qvq subset zs ws = all (flip elem ws) zs? por induccion estructural sobre zs
+caso zs = []) subset z[] ws = all (flip elem []) ws?
+izq:
+subset [] ws
+=                                                                                             (def subset, caso base)
+True
+der:
+all (flip elem ws) []
+=                                                                                                (def all, caso base)
+True
+caso zs = (a:as)) subset (a:as) ws = all (flip elem ws) (a:as)?
+Hi = subset as ws = all (flip elem ws) as
+Ti = subset (a:as) ws = all (flip elem ws) (a:as) ?
+izq:
+subset (a:as) ws
+=                                                                            (def subset, x <- a, ys <- ws, xs <- as)
+elem a ws && subset as ws
+=                                                                                                     (por hipotesis)
+elem a ws && all (flip elem ws) as
+der:
+all (flip elem ws) (a:as)
+=                                                                    (def all, f <- (flip elem ws), x <- a, xs <- as)
+(flip elem ws) a && all (flip elem ws) as
+=                                                                              (def flip, f <- elem, x <- ws, y <- a)
+elem a ws && all (flip elem ws) as
+--------------------------------------------------------------------------------------------------------------------
+g) prop: all null = null . concat ?
+dem: por ppio de ext. para todo xss. all null xss = null . concat xss? por induccion estructural sobre xss
+caso xss = []) all null [] = null . concat [] ? 
+izq:
+all null []
+=                                                                                                     (def caso base)
+True
+der:
+null . concat []
+=                                                                          (def (.), f <- null, g <- concat, x <- [])
+null (concat [])
+=                                                                                             (def concat, caso base)
+null []
+=                                                                                               (def null, caso base)
+True
+caso xss = (ys:yss)) all null (ys:yss) = null . concat (ys:yss)? 
+Hi = all null yss = null . concat yss? 
+Ti = all null (ys:yss) = null . concat (ys:yss) ? 
+izq:
+all null (ys:yss) 
+=                                                                            (def all, f <- null, x <- ys, xs <- yss)
+null ys && (all null yss)
+=                                                                                                     (por hipotesis)
+null ys && null . concat yss
+=                                                                         (def (.), f <- null, g <- concat, x <- yss)
+null ys && null (concat yss)
+der:
+null . concat (ys:yss)
+=                                                                    (def (.), f <- null, g <- concat, x <- (ys:yss))
+null (concat (ys:yss))
+=                                                                                  (def concat, xs <- ys, xss <- yss)
+null (ys ++ concat yss)
+=                                                                     (por lema null (xs ++ ys) = null xs && null ys)
+null ys && null (concat yss)
+
+lema)
+prop: para todo xs. para todo ys. null (xs ++ ys) = null xs && null ys
+dem: por induccion estructural sobre xs. 
+caso xs = []) null ([] ++ ys) = null [] && null ys
+izq:
+null ([] ++ ys)
+=                                                                                               (def (++), caso base)
+null ys
+der:
+null [] && null ys
+=                                                                                               (def null, caso base)
+True && null ys
+=                                                                                               (def (&&), caso base)
+null ys
+caso xs = (z:zs)) 
+Hi = null (zs ++ ys) = null zs && null ys
+Te = null ((z:zs) ++ ys) = null (z:zs) && null ys ?
+izq:
+null ((z:zs) ++ ys)
+=                                                                              (def (++), x <- z, xs <- zs, ys <- ys)
+null (z:(zs ++ ys))
+=                                                                                            (def null, caso general)
+False
+der:
+null (z:zs) && null ys 
+=                                                                                            (def null, caso general)
+False && null ys
+=                                                                                            (def (&&), caso general)
+False
+--------------------------------------------------------------------------------------------------------------------
+h)prop: length = length . reverse ?
+dem: por ppio de ext. para todo xs. length xs = length . reverse xs? por induccion estructural sobre xs
+caso xs = []) length [] = length . reverse []?
+izq:
+length []
+=                                                                                            (def length, caso base)
+0
+der:
+length . reverse []
+=                                                                       (def (.), f <- length, g <- reverse, x <- [])
+length (reverse [])
+=                                                                                            (def reverse, caso base)
+length []
+=                                                                                            (def length, caso base)
+0
+caso xs = (y:ys))
+Hi = length ys = length . reverse ys
+Te = length (y:ys) = length . reverse (y:ys)?
+izq:
+length (y:ys)
+=                                                                                      (def length, x <- y, xs <- ys)
+1 + length ys
+=                                                                                                     (por hipotesis)
+1 + length . reverse ys
+=                                                                       (def (.), f <- length, g <- reverse, x <- ys)
+1 + length (reverse ys)
+der:
+length . reverse (y:ys)
+=                                                                   (def (.), f <- length, g <- reverse, x <- (y:ys))
+length (reverse (y:ys))
+=                                                                                     (def reverse, x <- y, xs <- ys)
+length (reverse ys ++ [y])
+=                                                                                             (por lema. ejercicio a)
+length (reverse ys) + length [y]
+=                                                                                      (def length, x <- y, xs <- [])
+length (reverse ys) + 1 + length []
+=                                                                                             (def length, caso base)
+length (reverse ys) + 1 + 0
+=                                                                            (por aritmetica y asociativa de la suma)
+1 + length (reverse ys)
+--------------------------------------------------------------------------------------------------------------------
+i) prop: para todo xs. para todo ys. reverse (xs ++ ys) = reverse ys ++ reverse xs ?
+dem: por induccion estructural sobre xs.
+caso xs = []) reverse ([] ++ ys) = reverse ys ++ reverse []
+izq:
+reverse ([] ++ ys)
+=                                                                                               (def (++), caso base)
+reverse ys
+der:
+reverse ys ++ reverse []
+=                                                                                            (def reverse, caso base)
+reverse ys ++ []
+=                                                                                               (def (++), caso base)
+reverse ys
+caso xs = (z:zs))
+Hi = reverse (zs ++ ys) = reverse ys ++ reverse zs
+Te = reverse ((z:zs) ++ ys) = reverse ys ++ reverse (z:zs)
+izq:
+reverse ((z:zs) ++ ys)
+=                                                                              (def (++), x <- z, xs <- zs, ys <- ys)
+reverse (z:(zs ++ ys))
+=                                                                             (def reverse, x <- z, xs <- (zs ++ ys))
+reverse (zs ++ ys) ++ [z]
+=                                                                                                     (por hipotesis)
+(reverse ys ++ reverse zs) ++ [z]
+der:
+reverse ys ++ reverse (z:zs)
+=                                                                                     (def reverse, x <- z, xs <- zs)
+reverse ys ++ (reverse zs ++ [z])
+=                                                                                                 (por lema. punto b)
+(reverse ys ++ reverse zs) ++ [z]
+--------------------------------------------------------------------------------------------------------------------
+j) prop: para todo xs. para todo ys. all p (xs++ys) = all p (reverse xs) && all p (reverse ys) ?
+dem: sean zs y ws dos listas cualquiera. Qvq all p (zs ++ ws) = all p (reverse zs) && all p (reverse ws) ?
+por induccion estructural sobre zs:
+caso zs = []) all p ([]++ys) = all p (reverse []) && all p (reverse ys)
+izq:
+all p ([]++ys)
+=                                                                                               (def (++), caso base)
+all p ys
+der:
+all p (reverse []) && all p (reverse ys)
+=                                                                                            (def reverse, caso base)
+all p [] && all p (reverse ys)
+=                                                                                                (def all, caso base)
+True && all p (reverse ys)
+=                                                                                                 (def &&, caso base)
+all p (reverse ys)
+=                                                                           (por lema, all f xs = all f (reverse xs))
+all p ys
+caso zs = (q:qs))
+Hi =  all p (qs++ys) = all p (reverse qs) && all p (reverse ys)
+Te =  all p ((q:qs)++ys) = all p (reverse (q:qs)) && all p (reverse ys)
+izq:
+all p ((q:qs)++ys)
+=                                                                              (def (++), x <- q, xs <- qs, ys <- ys)
+all p (q:(qs ++ ys))
+=                                                                         (def all, f <- p, x <- q, xs <- (qs ++ ys))
+p q && (all p (qs ++ ys))
+=                                                                                                     (por hipotesis)
+p q && all p (reverse qs) && all p (reverse ys)
+=                                                                           (por lema, all f xs = all f (reverse xs))
+pq && all p qs && all p ys
+der:
+all p (reverse (q:qs)) && all p (reverse ys)
+=                                                                           (por lema, all f xs = all f (reverse xs))
+all p (q:qs) && all p (reverse ys)
+=                                                                                 (def all, f <- p, x <- q, xs <- qs)
+p q && (all p qs) && all p (reverse ys)
+=                                                                           (por lema, all f xs = all f (reverse xs))
+p q && (all p qs) && all p ys
+
+lema) prop : all f xs = all f (reverse xs) ?
+dem: por induccion estructural sobre xs:
+caso xs = [])
+der:
+all f []
+=                                                                                                (def all, caso base)
+True
+izq:
+all f (reverse [])
+=                                                                                            (def reverse, caso base)
+all f []
+=                                                                                                (def all, caso base)
+True
+caso xs = (y:ys))
+Hi = all f ys = all f (reverse ys)
+Te = all f (y:ys) = all f (reverse (y:ys))
+izq:
+all f (y:ys)
+=                                                                                 (def all, f <- f, x <- y, xs <- ys)
+f y && (all f ys)
+=                                                                                                     (por hipotesis)
+f y && (all f (reverse ys))
+der:
+all f (reverse (y:ys))
+=                                                                                     (def reverse, x <- y, xs <- ys)
+all f (reverse ys ++ [y])
+=                                                             (por lema, all f (xs ++ ys) = all f (xs) && all f (ys))
+all f (reverse ys) && all f [y]
+=                                                                                 (def all, f <- f, x <- y, xs <- [])
+all f (reverse ys) && f y && (all f [])
+=                                                                                                (def all, caso base)
+all f (reverse ys) && f y && True
+=                                                                                                 (conmutativa de &&)
+True && f y && all f (reverse ys)
+=                                                                                                 (def &&, caso base)
+f y && all f (reverse ys)
+
+lema) prop: all f (xs ++ ys) = all f (xs) && all f (ys) ?
+dem: por induccion estructural sobre xs:
+caso xs = []) all f ([] ++ ys) = all f [] && all f (ys) ?
+izq:
+all f ([] ++ ys)
+=                                                                                               (def (++), caso base)
+all f ys
+der:
+all f [] && all f (ys) 
+=                                                                                                (def all, caso base)
+True && all f (ys)
+=                                                                                                 (def &&, caso base)
+all f ys
+caso xs = (z:zs))
+Hi: all f (zs ++ ys) = all f zs && all f (ys) !
+Te: all f ((z:zs) ++ ys) = all f (z:zs) && all f (ys) ?
+izq:
+all f ((z:zs) ++ ys)
+=                                                                              (def (++), x <- z, xs <- zs, ys <- ys)
+all f (z:(zs ++ ys))
+=                                                                         (def all, f <- f, x <- z, xs <- (zs ++ ys))
+f z && (all f (zs ++ ys))
+=                                                                                                     (por hipotesis)
+f z && all f zs && all f ys
+der:
+all f (z:zs) && all f (ys)
+=                                                                                         (def all, x <- z, xs <- zs)
+f z && all f zs && all f ys
+--------------------------------------------------------------------------------------------------------------------
+k) prop: k. para todo xs. para todo ys. unzip (zip xs ys) = (xs, ys) (en este caso, mostrar que no vale)
+Dem: La propiedad es falsa. Mostraremos un contraejemplo. Sean as = [] y bs = [1]. 
+Veremos si unzip (zip as bs) = (as, bs) ?
+izq:
+unzip (zip [] [1])
+=                                                                                                (def zip, caso base)
+unzip []
+=                                                                                              (def unzip, caso base)
+([],[])
+der:
+([],[1])
+Conclusión: Como ([], []) /= ([],), la propiedad no es válida para todo xs e ys.
+--------------------------------------------------------------------------------------------------------------------

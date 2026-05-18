@@ -1,0 +1,64 @@
+ejercicio 1)
+a)
+i) evalN :: N -> Int
+evalN Z = 0
+evalN (S n) = 1 + evalN n
+ii) addN :: N -> N -> N
+addN Z m = m
+addN (S n) m = S (addN n m)
+iii) prodN :: N -> N -> N
+prodN Z m = Z
+prodN (S n) m = addN (prodN n m) m
+iv) int2N :: Int -> N
+int2N 0 = Z 
+int2N n = S (n - 1)
+b)
+i) prop: para todo n1. para todo n2. evalN (addN n1 n2) = evalN n1 + evalN n2 ?
+dem: sean n y m dos N cualquiera. evalN (addN n m) = evalN n + evalN m ? por induccion estructural sobre n:
+caso n = Z) evalN (addN Z m) = evalN Z + evalN m
+izq:
+evalN (addN Z m) 
+=                                                                                               (def addN, caso base)
+evalN m 
+der:
+evalN Z + evalN m
+=                                                                                              (def evalN, caso base)
+0 + evalN m
+=                                                                                                    (por aritmetica)
+evalN m
+caso n = (S x))
+Hi = ¡evalN (addN x m) = evalN x + evalN m!
+Te = ¿evalN (addN (S x) m) = evalN (S x) + evalN m?
+Izq:
+evalN (addN (S x) m)
+=                                                                                          (def addN, n <- x, m <- m)
+evalN (S (addN x m))
+=                                                                                        (def evalN, n <- (addN x m))
+1 + evalN (addN x m)
+=                                                                                                     (por hipotesis)
+1 + evalN x + evalN m
+der:
+evalN (S x) + evalN m
+=                                                                                                  (def evalN n <- x)
+1 + evalN x + evalN m
+---------------------------------------------------------------------------------------------------------------------
+ii) prop: para todo n1. para todo n2. evalN (prodN n1 n2) = evalN n1 * evalN n2
+dem: sean n y m dos N cualquiera, evalN (prodN n m) = evalN n * evalN m. por induccion estructural sobre n:
+caso n = Z)
+izq:
+evalN (prodN Z m)
+=                                                                                              (def prodN, caso base)
+evalN Z
+=                                                                                              (def evalN, caso base)
+0
+der:
+evalN Z * evalN m
+=                                                                                              (def evalN, caso base)
+0 * evalN m
+=                                                                                                    (por aritmetica)
+0
+caso n = (S x))
+Hi = evalN (prodN x m) = evalN x * evalN m
+Te = evalN (prodN (S x) m) = evalN (S x) * evalN m
+izq:
+evalN (prodN n m)
