@@ -2,7 +2,7 @@ ejercicio 1)
 a)
 i) evalN :: N -> Int
 evalN Z = 0
-evalN (S n) = 1 + evalN n
+evalN (S n) = 1 + evalN n  
 ii) addN :: N -> N -> N
 addN Z m = m
 addN (S n) m = S (addN n m)
@@ -11,7 +11,7 @@ prodN Z m = Z
 prodN (S n) m = addN (prodN n m) m
 iv) int2N :: Int -> N
 int2N 0 = Z 
-int2N n = S (n - 1)
+int2N n = S (int2N (n-1))
 b)
 i) prop: para todo n1. para todo n2. evalN (addN n1 n2) = evalN n1 + evalN n2 ?
 dem: sean n y m dos N cualquiera. evalN (addN n m) = evalN n + evalN m ? por induccion estructural sobre n:
@@ -59,6 +59,278 @@ evalN Z * evalN m
 0
 caso n = (S x))
 Hi = evalN (prodN x m) = evalN x * evalN m
-Te = evalN (prodN (S x) m) = evalN (S x) * evalN m
+Te = evalN (prodN (S x) m) = evalN (S x) * evalN m ?
 izq:
-evalN (prodN n m)
+evalN (prodN (S x) m)
+=                                                                                         (def prodN, n <- x, m <- m)
+evalN (addN (prodN x m) m)
+=                                                                                          (por lema del ejercicio i)
+evalN (prodN x m) + evalN m
+der:
+evalN (S x) * evalN m 
+=                                                                                                 (def evalN, n <- x)
+(1 + evalN x) * evalN m
+=                                                                                             (por distributiva de *)
+(1 * evalN m) + (evalN x * evalN m)
+=                                                                                                     (por hipotesis)
+(1 * evalN m) + evalN (prodN x m)
+=                                                                                                    (por aritmetica)
+evalN m + evalN (prodN x m)
+=                                                                                                   (por conmutativa)
+evalN (prodN x m) + evalN m
+---------------------------------------------------------------------------------------------------------------------
+iii)prop: int2N . evalN = id ?
+dem: por ppio de ext. int2N . evalN N = id N? por induccion estructural sobre N:
+caso base) int2N . evalN Z = id Z?
+caso ind.) HI) int2N . evalN x = id x !
+           TI) int2N . evalN (S x) = id (S x) ?
+
+dem caso base)
+izq:
+int2N . evalN Z
+=                                                                           (def (.), f <- int2N, g <- evalN, x <- Z)
+int2N (evalN Z)
+=                                                                                              (def evalN, caso base)
+int2N 0
+=                                                                                              (def int2N, caso base)
+Z
+der:
+id Z
+=                                                                                                            (def id)
+Z
+dem caso ind.)
+izq:
+int2N . evalN (S x) 
+=                                                                       (def (.), f <- int2N, g <- evalN, x <- (S x))
+int2N (evalN (S x))
+=                                                                                                 (def evalN, n <- x)
+int2N (1 + evalN x)
+=                                                                                     (def int2N, n <- (1 + evalN x))
+S (int2N ((1 + evalN x) - 1))
+=                                                                                                    (por aritmetica)
+S (int2N (evalN x))
+=                                                                                                     (por hipotesis)
+S (id x)
+=                                                                                                        (por def id)
+(S x)
+der:
+id (S x) 
+=                                                                                                            (def id)
+(S x)
+---------------------------------------------------------------------------------------------------------------------
+iv) prop: evalN . int2N = id?
+dem: por ppio de ext. evalN . int2N x = id x? por induccion estructural sobre x:
+caso base) evalN . int2N x = id x?
+caso ind.) HI) evalN . int2N x = id x !
+           TI) evalN . int2N x + 1 = id x + 1 ?
+
+dem: caso base)
+izq:
+evalN . int2N 0 
+=                                                                           (def (.), f <- evalN, g <- int2N, x <- 0)
+evalN (int2N 0)
+=                                                                                              (def int2N, caso base)
+evalN Z
+=                                                                                              (def evalN, caso base)
+0
+der:
+id 0
+=                                                                                                            (def id)
+0
+caso ind.)
+izq:
+evalN . int2N x + 1
+=                                                                     (def (.), f <- evalN, g <- int2N, x <- (x + 1))
+evalN (int2N (x + 1))
+=                                                                                           (def int2N, n <- (x + 1))
+evalN (S (int2N ((x + 1) - 1)))
+=                                                                             (def evalN, n <- (int2N ((x + 1) - 1)))
+1 + evalN (int2N ((x + 1) - 1))
+=                                                                                                    (por aritmetica)
+1 + evalN (int2N x)
+=                                                                                                     (por hipotesis)
+1 + id x
+=                                                                                                            (def id)
+1 + x 
+der:
+id x + 1
+=                                                                                                            (def id)
+x + 1
+=                                                                                        (def conmutativa de la suma)
+1 + x
+---------------------------------------------------------------------------------------------------------------------
+Ejercicio 2)
+a) i)
+evalNU :: NU -> Int
+evalNU []     = 0
+evalNU (x:xs) = 1 + evalNU xs
+ii)
+succNU :: NU -> NU
+succNU NUs = () : NUs
+iii)
+addNU :: NU -> NU -> NU
+addNU [] ys     = ys 
+addNU (x:xs) ys = () : (addNU xs ys) 
+iv)
+nu2n :: NU -> N
+nu2n []     = Z
+nu2n (x:xs) = S (nu2n xs)
+v)
+n2nu :: N -> NU
+n2nu Z = []
+n2nu (S n) = () : (n2nu n) 
+b) i) prop: evalNU . succNU = (+1) . evalNU ?
+dem: por ppio de ext. para todo Nu. evalNU . succNU Nu = (+1) . evalNU Nu ? 
+por induccion estructural sobre Nu:
+caso base) evalNU . succNU [] = (+1) . evalNU []
+caso ind.) Hi) evalNU . succNU xs = (+1) . evalNU xs
+           Te) evalNU . succNU (x:xs) = (+1) . evalNU (x:xs)
+
+dem: caso base)
+Izq:
+evalNU . succNU []
+=                                                                 (def (.), f <- evalNU, g <- succNU, x <- [])
+evalNU (succNU [])
+=                                                                                      (def succNU, NUs <- [])
+evalNU (():[])
+=                                                                                       (def evalNU, xs <- [])
+1 + evalNU []
+=                                                                                      (def evalNU, caso base)
+1 + 0
+=                                                                                             (por aritmetica)
+1
+Der:
+(+1) . evalNU []
+=                                                                   (def (.), f <- (+1), g <- evalNU, x <- [])
+(+1) (evalNU [])
+=                                                                                      (def evalNU, caso base)
+(+1) 0
+=                                                                                           (def (+1), x <- 0)
+1
+dem caso ind.)
+Izq:
+evalNU . succNU (x:xs)
+=                                                             (def (.), f <- evalNU, g <- succNU, x <- (x:xs))
+evalNU (succNU (x:xs))
+=                                                                                  (def succNU, NUs <- (x:xs))
+evalNU (():x:xs)
+=                                                                                   (def evalNU, xs <- (x:xs))
+1 + evalNU (x:xs)
+=                                                                                       (def evalNU, xs <- xs)
+1 + 1 + evalNU xs
+=                                                                                            (por aritemetica)
+2 + evalNU xs
+Der:
+(+1) . evalNU (x:xs)
+=                                                               (def (.), f <- (+1), g <- evalNU, x <- (x:xs))
+(+1) (evalNU (x:xs))
+=                                                                                       (def evalNU, xs <- xs)
+(+1) 1 + evalNU xs
+=                                                                                           (def (+1), x <- 1)
+2 + evalNU xs
+---------------------------------------------------------------------------------------------------------------------
+ii) prop: para todo n1. para todo n2. evalNU (addNU n1 n2) = evalNU n1 + evalNU n2 ?
+dem: por induccion estructural sobre n1:
+caso base) evalNU (addNU [] n2) = evalNU [] + evalNU n2
+caso ind.) Hi) evalNU (addNU xs n2) = evalNU xs + evalNU n2
+           Te) evalNU (addNU (x:xs) n2) = evalNU (x:xs) + evalNU n2
+
+dem caso base)
+Izd: 
+evalNU (addNU [] n2)
+=                                                                                       (def addNU, caso base)
+evalNU n2
+Der:
+evalNU [] + evalNU n2
+=                                                                                      (def evalNU, caso base)
+0 + evalNU n2
+=                                                                                            (por aritemetica)
+evalNU n2
+dem caso ind.)
+Izd:
+evalNU (addNU (x:xs) n2)
+=                                                                              (def addNU, xs <- xs, ys <- n2)
+evalNU (() : (addNU xs n2))
+=                                                                            (def evalNU, xs <- (addNU xs n2))
+1 + evalNU (addNU xs n2)
+=                                                                                              (por hipotesis)
+1 + evalNU xs + evalNU n2
+Der:
+evalNU (x:xs) + evalNU n2
+=                                                                                       (def evalNU, xs <- xs)
+1 + evalNU xs + evalNU n2
+--------------------------------------------------------------------------------------------------------------
+iii) prop: nu2n . n2nu = id ?
+dem: por ppio de ext. para todo n. nu2n . n2nu n = id n? por induccion estructural sobre n:
+caso base) nu2n . n2nu Z = id Z ?
+caso ind.) Hi) nu2n . n2nu n = id n !
+           Te) nu2n . n2nu (S n) = id (S n)?
+
+dem caso base)
+Izd:
+nu2n . n2nu Z
+=                                                                      (def (.), f <- nu2n, g <- n2nu, x <- Z)
+nu2n (n2nu Z)
+=                                                                                        (def n2nu, caso base)
+nu2n []
+=                                                                                        (def nu2n, caso base)
+Z
+Der:
+id Z
+=                                                                                                     (def id)
+Z
+dem caso ind.)
+Izd:
+nu2n . n2nu (S n)
+=                                                                   (def (.), f <- nu2n, g <- n2nu, x <- (S n))
+nu2n (n2nu (S n))
+=                                                                                           (def n2nu, n <- n)
+nu2n (() : (n2nu n))
+=                                                                                   (def nu2n, xs <- (n2nu n))
+S (nu2n (n2nu n))
+=                                                                                              (por hipotesis)
+S (id n)
+=                                                                                                     (def id)
+S n
+Der:
+id (S n)
+=                                                                                                     (def id)
+S n
+--------------------------------------------------------------------------------------------------------------
+iv) prop: n2nu . nu2n = id ? 
+dem: por ppio de ext. para todo Nu. n2nu . nu2n Nu = id Nu ? por induccion estructural:
+caso base) n2nu . nu2n [] = id [] ? 
+caso ind.) Hi) n2nu . nu2n xs = id xs !
+           Te) n2nu . nu2n (x:xs) = id (x:xs)
+
+dem caso base)
+Izd: 
+n2nu . nu2n []
+=                                                                     (def (.), f <- n2nu, g <- nu2n, x <- [])
+n2nu (nu2n [])
+=                                                                                        (def nu2n, caso base)
+n2nu Z
+=                                                                                        (def n2nu, caso base)
+[]
+Der: 
+id []
+=                                                                                                     (def id)
+[]
+dem caso ind.)
+Izd:
+n2nu . nu2n (x:xs)
+=                                                                 (def (.), f <- n2nu, g <- nu2n, x <- (x:xs))
+n2nu (nu2n (x:xs))
+=                                                                                         (def nu2n, xs <- xs)
+n2nu (S (nu2n xs))
+=                                                                                   (def n2nu, n <- (nu2n xs))
+() : (n2nu (nu2n xs))
+=                                                                                              (por hipotesis)
+() : (id xs)
+=                                                                                                     (def id)
+():xs
+Der: 
+id (x:xs)
+=                                                                                                     (def id)
+(x:xs)
+conclusion: como la estructura es un NU, () = x, por lo tanto ambos lados son equivalentes
