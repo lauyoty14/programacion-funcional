@@ -334,3 +334,583 @@ id (x:xs)
 =                                                                                                     (def id)
 (x:xs)
 conclusion: como la estructura es un NU, () = x, por lo tanto ambos lados son equivalentes
+--------------------------------------------------------------------------------------------------------------
+Ejercicio 3)
+a) i)
+evalNB :: NBin -> Int
+evalNB []     = 0
+evalNB (d:ds) = dbAsInt d + 2 * evalNB ds
+ii)
+normalizarNB :: NBin -> NBin
+normalizarNB [] = []
+normalizarNB (d:ds) = aux d (normalizarNB ds)
+
+aux::DigBin -> NBin -> NBin
+aux O [] = []
+aux b ds = b:ds
+iii)
+succNB :: NBin -> NBin
+succNB []     = [I]
+succNB (O:ds) = I : ds
+succNB (I:ds) = O : succNB ds
+iv)
+-- inicia el acarreo en O
+addNB :: NBin -> NBin -> NBin
+addNB ds1 ds2 = addNBConCarry ds1 ds2 O
+
+-- Recursión estructural con acarreo
+addNBConCarry :: NBin -> NBin -> DigBin -> NBin
+addNBConCarry []  ds2 O = ds2 
+addNBConCarry []  ds2 I = succNB ds2 
+addNBConCarry ds1 []  O = ds1 
+addNBConCarry ds1 []  I = succNB ds1 
+addNBConCarry (d1:ds1) (d2:ds2) c = 
+    combinarResultados (addDB d1 d2 c) ds1 ds2 
+
+-- Subtarea para deconstruir la tupla
+combinarResultados :: (DigBin, DigBin) -> NBin -> NBin -> NBin
+combinarResultados (resBit, carryOut) ds1 ds2 = 
+    resBit : addNBConCarry ds1 ds2 carryOut 
+
+-- Lógica de bits pura por Pattern Matching
+addDB :: DigBin -> DigBin -> DigBin -> (DigBin, DigBin)
+addDB O O O = (O, O) 
+addDB O O I = (I, O) 
+addDB O I O = (I, O) 
+addDB O I I = (O, I) 
+addDB I O O = (I, O) 
+addDB I O I = (O, I) 
+addDB I I O = (O, I) 
+addDB I I I = (I, I) 
+
+-- Sucesor binario simbólico
+succNB :: NBin -> NBin
+succNB []     = [I]           
+succNB (O:ds) = I : ds        
+succNB (I:ds) = O : succNB ds 
+v)
+nb2n :: NBin -> N
+nb2n []     = Z
+nb2n (d:ds) = addN (dbAsN d) (prodN (S (S Z)) (nb2n ds)) 
+
+dbAsN :: DigBin -> N 
+dbAsN O = Z
+dbAsN I = S Z
+vi)
+n2nb :: N -> NBin
+n2nb Z     = []
+n2nb (S n) = succNB (n2nb n)
+--------------------------------------------------------------------------------------------------------------
+b) i) prop: evalNB . normalizarNB = evalNB ? 
+dem: por ppio de ext. para todo nb. evalNB . normalizarNB nb = evalNB nb? sea Nb un NBin cualquiera. Qvq evalNB . normalizarNB Nb = evalNB Nb?
+por induccion estructural sobre Nb:
+caso base) evalNB . normalizarNB [] = evalNB []
+caso ind.) Hi) evalNB . normalizarNB ds = evalNB ds
+           Te) evalNB . normalizarNB (d:ds) = evalNB (d:ds)
+
+lema 1) evalNB (aux x xs) = evalNB (x : xs)
+
+dem caso base)
+Izd:
+evalNB . normalizarNB []
+=                                                                                            (def (.), f <- evalNB, g <- normalizarNB, x <- [])
+evalNB (normalizarNB [])
+=                                                                                                                   (def normalizar, caso base)
+evalNB []
+=                                                                                                                       (def evalNB, caso base)
+0
+Der:
+evalNB []
+=                                                                                                                       (def evalNB, caso base)
+0
+dem caso ind.)
+Izd:
+evalNB . normalizarNB (d:ds)
+=                                                                                        (def (.), f <- evalNB, g <- normalizarNB, x <- (d:ds))
+evalNB (normalizarNB (d:ds))
+=                                                                                                            (def normalizar, d <- d, ds <- ds)
+evalNB (aux d (normalizarNB ds))
+=                                                                                                                                  (por lema 1)
+evalNB (d : (normalizarNB ds))
+=                                                                                                 (def evalNB, d <- d, ds <- (normalizarNB ds))
+dbAsInt d + 2 * evalNB (normalizar ds)
+=                                                                                                                               (por hipotesis)
+dbAsInt d + 2 * evalNB ds
+Der:
+evalNB (d:ds)
+=                                                                                                                (def evalNB, d <- d, ds <- ds)
+dbAsInt d + 2 * evalNB ds
+-----------------------------------------------------------------------------------------------------------------------------------------------
+lema 1) prop: evalNB (aux x xs) = evalNB (x : xs)
+dem: sean d :: DigBin y bs :: NBin. se plantean los casos:
+
+caso 1: d = O y bs = []) ¿ evalNB (aux O []) = evalNB (O : []) ?
+caso 2: d = I y bs = []) ¿ evalNB (aux I []) = evalNB (I : []) ?
+caso 3: d = O y bs = (d:ds)) ¿ evalNB (aux O (d:ds)) = evalNB (O:(d:ds)) ?
+caso 4: d = I y bs = (d:ds)) ¿ evalNB (aux I (d:ds)) = evalNB (I:(d:ds)) ?
+
+caso 1)
+Izd:
+evalNB (aux O [])
+=                                                                                                                          (def aux, caso base)
+evalNB []
+=                                                                                                                       (def evalNB, caso base)
+0
+Der:
+evalNB (O : [])
+=                                                                                                                (def evalNB, d <- O, ds <- [])
+dbAsInt O + 2 * evalNB []
+=                                                                                                                       (def evalNB, caso base)
+dbAsInt 0 + 2 * 0
+=                                                                                                                                 (def dbAsInt)
+0 + 2 * 0
+=                                                                                                                              (por aritmetica)
+0
+caso 2)
+Izd:
+evalNB (aux I [])
+=                                                                                                                   (def aux, b <- I, ds <- [])
+dbAsInt I + 2 * evalNB []
+Der:
+evalNB (I : [])
+=                                                                                                                (def evalNB, d <- I, ds <- [])
+dbAsInt I + 2 * evalNB []
+caso 3)
+Izd:
+evalNB (aux O (d:ds)) 
+=                                                                                                               (def aux, b <- O, ds <- (d:ds))
+evalNB (O:(d:ds))
+=                                                                                                            (def evalNB, d <- O, ds <- (d:ds))
+dbAsInt O + 2 * evalNB (d:ds)
+Der:
+evalNB (O:(d:ds))
+=                                                                                                            (def evalNB, d <- O, ds <- (d:ds))
+dbAsInt O + 2 * evalNB (d:ds)
+caso 4)
+Izd:
+evalNB (aux I (d:ds))
+=                                                                                                               (def aux, b <- I, ds <- (d:ds))
+evalNB (I:(d:ds))
+Der:
+evalNB (I:(d:ds))
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ii) prop: evalNB . succNB = (+1) . evalNB
+dem: por ppio de ext. ¿ para todo xs::NBin. (evalNB . succNB) xs = ((+1) . evalNB) xs ?
+sea Nb cualquiera. por induccion estructural sobre Nb:
+caso base) ¿ (evalNB . succNB) [] = ((+1) . evalNB) [] ?
+caso ind.) Hi) ¿ (evalNB . succNB) bs = ((+1) . evalNB) bs ?
+           Te) ¿ (evalNB . succNB) (b:bs) = ((+1) . evalNB) (b:bs) ?
+
+dem caso base)
+Izd: 
+(evalNB . succNB) [] 
+=                                                                                                  (def (.), f <- evalNB, g <- succNB, x <- [])
+evalNB (succNB [])
+=                                                                                                                       (def succNB, caso base)
+evalNB [I]
+=                                                                                                                (def evalNB, d <- I, ds <- [])
+dbAsInt I + 2 * evalNB []
+=                                                                                                                                 (def dbAsInt)
+1 + 2 * evalNB []
+=                                                                                                                       (def evalNB, caso base)
+1 + 2 * 0
+=                                                                                                                              (por aritmetica)
+1
+Der:
+((+1) . evalNB) []
+=                                                                                                (def (.), f <- (+1), g <- evalNB, x <- (b:bs))
+(+1) (evalNB [])
+=                                                                                                                       (def evalNB, caso base)
+(+1) 0
+=                                                                                                                            (def (+1), x <- 0)
+1
+dem caso ind.)
+Izd:
+(evalNB . succNB) (b:bs)
+=                                                                                              (def (.), f <- evalNB, g <- succNB, x <- (b:bs))
+evalNB (succNB (b:bs))
+= caso b = I) evalNB (succNB (I:bs))
+    evalNB (O : succNB bs)
+    =                                                                                                   (def evalNB, d <- O, ds <- (succNB bs))
+    dbAsInt O + 2 * evalNB (succNB bs)
+    =                                                                                                                             (def dbAsInt)
+    0 + 2 * evalNB (succNB bs)
+    =                                                                                                                           (por hipotesis)
+    0 + 2 * ((+1) . evalNB) bs
+    =                                                                                                                          (por aritmetica)
+    2 * ((+1) . evalNB) bs
+    =                                                                                                (def (.), f <- (+1), g <- evalNB, x <- bs)
+    2 * ((+1) (evalNB bs))
+    =                                                                                                                                (def (+1))
+    2 * (1 + evalNB bs)
+    =                                                                                                                        (por distributiva)
+    2 + (2* evalNB bs)
+   caso b = O) evalNB (succNB (O:bs))
+    evalNB (I : bs)
+    =                                                                                                            (def evalNB, d <- I, ds <- bs)
+    dbAsInt I + 2 * evalNB bs
+    =                                                                                                                             (def dbAsInt)
+    1 + 2 * evalNB bs
+
+Der:
+((+1) . evalNB) (b:bs)
+=                                                                                                (def (.), f <- (+1), g <- evalNB, x <- (b:bs))
+(+1) (evalNB (b:bs))
+=                                                                                                                (def evalNB, d <- b, ds <- bs)
+(+1) (dbAsInt b + 2 * evalNB bs)
+= caso b = I) (+1) (dbAsInt I + 2 * evalNB bs)
+    (+1) (1 + 2 * evalNB bs)
+    =                                                                                                                                (def (+1))
+    2 + (2 * evalNB bs)
+  caso b = O) (+1) (dbAsInt O + 2 * evalNB bs)
+    (+1) (0 + 2 * evalNB bs)
+    =                                                                                                                          (por aritmetica)
+    (+1) (2 * evalNB bs)
+    =                                                                                                                                (def (+1))
+    1 + (2 * evalNB bs)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+iii) prop: para todo n1. para todo n2. evalNB (addNB n1 n2) = evalNB n1 + evalNB n2 ? sea n1 y n2 :: NBin.
+Qvq evalNB (addNB n1 n2) = evalNB n1 + evalNB n2 ? 
+lema 1) para todo n1 n2 c. evalNB (addNBConCarry n1 n2 c) = evalNB n1 + evalNB n2 + dbAsInt c
+Izd:
+evalNB (addNB n1 n2)
+=                                                                                                                                   (def addNB)
+evalNB (addNBConCarry n1 n2 O)
+=                                                                                                                                  (por lema 1)
+evalNB n1 + evalNB n2 + dbAsInt 0
+=                                                                                                                                 (def dbAsInt)
+evalNB n1 + evalNB n2 + 0
+=                                                                                                                              (por aritmetica)
+evalNB n1 + evalNB n2
+Der:
+evalNB n1 + evalNB n2
+
+lema 1) prop: para todo n1 n2 c. evalNB (addNBConCarry n1 n2 c) = evalNB n1 + evalNB n2 + dbAsInt c
+dem: sea n1 :: NBin. por induccion estructural sobre n1:
+caso base) evalNB (addNBConCarry [] n2 c) = evalNB [] + evalNB n2 + dbAsInt c
+caso ind.) Hi) evalNB (addNBConCarry ds n2 c) = evalNB ds + evalNB n2 + dbAsInt c
+           Te) evalNB (addNBConCarry (d:ds) n2 c) = evalNB (d:ds) + evalNB n2 + dbAsInt c
+lema 2) para todo d,b y c :: DigBin. Sea (r,c′) = addDB d b c. 
+dbAsInt d + dbAsInt b + dbAsInt c = dbAsInt r + 2 * dbAsInt c'!
+
+dem caso base) 
+Izd:
+evalNB (addNBConCarry [] n2 c)
+    caso c = O)
+        =                                                                                                           (def addNBConCarry [] n2 O)
+        evalNB n2
+    caso c = I)
+        =                                                                                                           (def addNBConCarry [] n2 I)
+        evalNB (succNB n2)
+        =                                                                                                            (por lema de ejercicio ii)
+        evalNB n2 + 1
+Der:
+evalNB [] + evalNB n2 + dbAsInt c
+    caso c = O)
+        =                                                                                                               (def evalNB, caso base)
+        0 + evalNB n2 + dbAsInt O
+        =                                                                                                                         (def dbAsInt)
+        0 + evalNB n2 + 0
+        =                                                                                                                      (por aritmetica)
+        evalNB n2
+    caso c = I)
+        =                                                                                                           (def addNBConCarry [] n2 I)
+        evalNB [] + evalNB n2 + dbAsInt I
+        =                                                                                                               (def evalNB, caso base)
+        0 + evalNB n2 + dbAsInt I
+        =                                                                                                                         (def dbAsInt)
+        0 + evalNB n2 + 1
+        =                                                                                                                     (por aritemetica)
+        evalNB n2 + 1
+dem caso ind.)
+Izd:
+evalNB (addNBConCarry (d:ds) n2 c)
+    caso n2 = [])
+        si c = O)
+            =                                                                                                   (def addNBConCarry (d:ds) [] O)
+            evalNB (d:ds)
+            =                                                                                                   (def evalNB, d <- d, ds <- ds)
+            dbAsInt d + 2 * evalNB ds
+        si c = I)
+            =                                                                                                   (def addNBConCarry (d:ds) [] I)
+            evalNB (succNB (d:ds))
+            =                                                                                                                  (por lema ej ii)
+            evalNB (d:ds) + 1
+    caso n2 = (b:bs))
+        =                                                                                                   (def addNBConCarry (d:ds) (b:Bs) c)
+        evalNB (combinarResultados (addDB d b c) ds bs)
+        =                                                                              (sea (r , c') = addDB d b c. por def combinarResultados)
+        evalNB (r : addNBConCarry ds bs c')
+        =                                                                                  (def evalNB, d <- r, ds <- (addNBConCarry ds bs c'))
+        dbAsInt r + 2 * evalNB (addNBConCarry ds bs c')
+        =                                                                                                                       (por hipotesis)
+        dbAsInt r + 2 * (evalNB ds + evalNB bs + dbAsInt c')
+        =                                                                                                                       (distributiva)
+        dbAsInt r + 2 * evalNB ds + 2 * evalNB bs + 2 * dbAsInt c'
+        =                                                                                                                      (por asociativa)
+        (dbAsInt r + 2 * dbAsInt c') + (2 * evalNB ds + 2 * evalNB bs)
+        =                                                                                                                          (por lema 2)
+        (dbAsInt d + dbAsInt b + dbAsInt c) + (2 * evalNB ds + 2 * evalNB bs)
+        =                                                                                                              (reagrupando por numero)
+        (dbAsInt d + 2 * evalNB ds) + (dbAsInt b + 2 * evalNB bs) + dbAsInt c
+        =                                                                                                    (por def evalNB, aplicado 2 veces)
+        evalnNB (d:ds) + evalnNB (b:bs) + dbAsInt c
+Der:
+evalNB (d:ds) + evalNB n2 + dbAsInt c
+
+lema 2)
+∀ d, b, c :: DigBin . Sea (r, c') = addDB d b c . dbAsInt d + dbAsInt b + dbAsInt c = dbAsInt r + 2 * dbAsInt c'
+dem: por análisis de casos exhaustivo sobre los dígitos d, b y c. Dado que cada uno tiene dos constructores posibles (O e I), existen 23=8 combinaciones a verificar.
+
+--------------------------------------------------------------------------------
+caso 1) d = O, b = O, c = O. (r, c') = addDB O O O = (O, O) 
+Izd: 
+dbAsInt O + dbAsInt O + dbAsInt O 
+=                                                                                                                                 (def dbAsInt) 
+0 + 0 + 0
+=                                                                                                                              (por aritmética) 
+0 
+Der: 
+dbAsInt O + 2 * dbAsInt O 
+=                                                                                                                                 (def dbAsInt)
+0 + 2 * 0 
+=                                                                                                                              (por aritmética) 
+0 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 2) d = O, b = O, c = I. (r, c') = addDB O O I = (I, O) 
+Izd: 
+dbAsInt O + dbAsInt O + dbAsInt I 
+=                                                                                                                                (def dbAsInt) 
+0 + 0 + 1 
+=                                                                                                                              (por aritmética)
+1 
+Der: 
+dbAsInt I + 2 * dbAsInt O 
+=                                                                                                                                 (def dbAsInt) 
+1 + 2 * 0 =                                                                                                                   (por aritmética)
+1 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 3) d = O, b = I, c = O Variables: (r, c') = addDB O I O = (I, O) 
+Izd: dbAsInt O + dbAsInt I + dbAsInt O 
+=                                                                                                                                  (def dbAsInt)
+0 + 1 + 0 =                                                                                                                   (por aritmética)
+1 
+Der: 
+dbAsInt I + 2 * dbAsInt O 
+=                                                                                                                                 (def dbAsInt)
+1 + 2 * 0 =                                                                                                                     (por aritmética)
+1 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 4) d = O, b = I, c = I Variables: (r, c') = addDB O I I = (O, I) 
+Izd: 
+dbAsInt O + dbAsInt I + dbAsInt I 
+=                                                                                                                                  (def dbAsInt)
+0 + 1 + 1 
+=                                                                                                                          (por aritmética)
+2 
+Der: 
+dbAsInt O + 2 * dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+0 + 2 * 1 
+=                                                                                                                          (por aritmética)
+2 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 5) d = I, b = O, c = O Variables: (r, c') = addDB I O O = (I, O) Izd: dbAsInt I + dbAsInt O + dbAsInt O 
+=                                                                                                                            (def dbAsInt) 
+1 + 0 + 0 
+=                                                                                                                          (por aritmética) 
+1 
+Der: 
+dbAsInt I + 2 * dbAsInt O 
+=                                                                                                                            (def dbAsInt)
+1 + 2 * 0 
+=                                                                                                                          (por aritmética)
+1 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 6) d = I, b = O, c = I Variables: (r, c') = addDB I O I = (O, I) 
+Izd: 
+dbAsInt I + dbAsInt O + dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+1 + 0 + 1 
+=                                                                                                                          (por aritmética)
+2 
+Der: 
+dbAsInt O + 2 * dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+0 + 2 * 1 
+=                                                                                                                          (por aritmética)
+2 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 7) d = I, b = I, c = O Variables: (r, c') = addDB I I O = (O, I) 
+Izd: dbAsInt I + dbAsInt I + dbAsInt O 
+=                                                                                                                            (def dbAsInt)
+1 + 1 + 0 
+=                                                                                                                          (por aritmética)
+2 
+Der: 
+dbAsInt O + 2 * dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+0 + 2 * 1
+=                                                                                                                          (por aritmética)
+2 
+Vale la igualdad.
+--------------------------------------------------------------------------------
+caso 8) d = I, b = I, c = I Variables: (r, c') = addDB I I I = (I, I) 
+Izd: 
+dbAsInt I + dbAsInt I + dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+1 + 1 + 1 
+=                                                                                                                          (por aritmética)
+3 
+Der: 
+dbAsInt I + 2 * dbAsInt I 
+=                                                                                                                            (def dbAsInt)
+1 + 2 * 1 
+=                                                                                                                          (por aritmética)
+3 
+Vale la igualdad.                                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------
+c) 
+i) contra ejemplo: 
+    *n2nb . nb2n [I,O] = [I]
+    *id = [I,O]
+    conclusion: como la expresion es distinta a la identidad, la propiedad no es verdadera
+
+ii) prop: n2nb . nb2n = normalizarNB
+dem: por ppio de ext. n2nb . nb2n Nb = normalizarNB Nb. sea nb :: NBin. Qvq n2nb . nb2n nb = normalizarNB nb ? 
+lema 1) para todo n :: N. evalNB (n2nb n) = evalN n
+lema 2) para todo nb :: NBin . evalN (nb2n nb) = evalNB nb
+
+dem: parto de la expresion n2nb (nb2n nb) para analizar el valor numerico que representa. Qvq evalNB (n2nb . nb2n nb) = evalNB (normalizarNB nb)
+evalNB (n2nb (nb2n nb))
+=                                                                                                                                 (por lema 1)
+evalN (nb2n nb)
+=                                                                                                                                 (por lema 2)
+evalNB nb
+=                                                                                                                 (por lema del ejercicio b.i)
+evalNB (normalizarNB nb)
+
+Dado que hemos demostrado que evalNB (n2nb (nb2n nb)) = evalNB (normalizarNB nb), sabemos que ambas listas representan el mismo número natural. Además, por definición:
+
+    normalizarNB nb devuelve una lista normalizada.
+    n2nb n devuelve una lista normalizada (ya que se construye aplicando sucesivamente succNB, que preserva la normalización).
+
+Como en el sistema binario la representación normalizada de un número natural es única, dos listas normalizadas con el mismo valor deben 
+ser iguales. Por lo tanto, n2nb (nb2n nb) = normalizarNB nb."
+-------------------------------------------------------------------------------------------------------------------------------------------
+lema 1) prop: para todo n :: N. evalNB (n2nb n) = evalN n
+dem: sea n :: N. Qvq evalNB (n2nb n) = evalN n. por induccion estructural sobre n:
+caso base) evalNB (n2nb Z) = evalN Z
+caso ind.) Hi) evalNB (n2nb x) = evalN x
+           Te) evalNB (n2nb (S x)) = evalN (S x)
+
+dem caso base)
+Izd:
+evalNB (n2nb Z)
+=                                                                                                                         (def n2nb, caso base)
+evalNB []
+=                                                                                                                       (def evalNB, caso base)
+0
+Der:
+evalN Z
+=                                                                                                                       (def evalN, caso base)
+0
+dem caso ind.)
+izd:
+evalNB (n2nb (S x))
+=                                                                                                                           (def n2nb, n <- n)
+evalNB (succNB (n2nb x))
+=                                                                                                                           (por lema ej b.ii)
+(+1) . evalNB (n2nb x)
+=                                                                                             (def (.), f <- (+1), g <- evalNB, x <- (n2nb x))
+(+1) (evalNB (n2nb x))
+=                                                                                                                              (por hipotesis)
+(+1) (evalN x)
+=                                                                                                                                   (def (+1))
+1 + evalN x
+Der:
+evalN (S x)
+=                                                                                                                           (def evalN, n <- x)
+1 + evalN x
+-------------------------------------------------------------------------------------------------------------------------------------------
+lema 2) prop: para todo nb :: NBin . evalN (nb2n nb) = evalNB nb ?
+dem: sea nb :: NBin. Qvq NBin . evalN (nb2n nb) = evalNB nb ? por induccion estructural sobre nb:
+caso base) NBin . evalN (nb2n []) = evalNB []
+caso ind.) Hi) evalN (nb2n ds) = evalNB ds
+           Te) evalN (nb2n (d:ds)) = evalNB (d:ds)
+lema a) evalN (addN n1 n2) = evalN n1 + evalN n2 --ej 1b.i de la seccion 2
+lema b) evalN (prodN n1 n2) = evalN n1 * evalN n2
+lema c) evalN (dbAsN d) = dbAsInt d
+
+dem caso base)
+Izd:
+evalN (nb2n [])
+=                                                                                                                         (def nb2n, caso base)
+evalN Z
+=                                                                                                                        (def evalN, caso base)
+0
+Der: 
+evalNB []
+=                                                                                                                       (def evalNB, caso base)
+0
+dem caso ind.)
+Izd:
+evalN (nb2n (d:ds))
+=                                                                                                                 (def nb2n, d <- d, ds <- ds )
+evalN (addN (dbAsN d) (prodN (S (S Z)) (nb2n ds)))
+=                                                                                                                                  (por lema a)
+evalN (dbAsN d) + evalN (prodN (S (S Z)) (nb2n ds))
+=                                                                                                                                  (por lema b)
+evalN (dbAsN d) + evalN (S (S Z)) * evalN (nb2n ds)
+=                                                                                                                               (por hipotesis)
+evalN (dbAsN d) + evalN (S (S Z)) * evalNB ds
+=                                                                                                                       (def evalN, n <- (S Z))
+evalN (dbAsN d) + (1 + evalN (S Z)) * evalNB ds
+=                                                                                                                           (def evalN, n <- Z)
+evalN (dbAsN d) + (1 + (1 + evalN Z)) * evalNB ds
+=                                                                                                                        (def evalN, caso base)
+evalN (dbAsN d) + (1 + (1 + 0)) * evalNB ds
+=                                                                                                                              (por aritmetica)
+evalN (dbAsN d) + 2 * evalNB ds
+=                                                                                                                                  (por lema c)
+dbAsInt d + 2 * evalNB ds
+Der:
+evalNB (d:ds)
+=                                                                                                                (def evalNB, d <- d, ds <- ds)
+dbAsInt d + 2 * evalNB ds
+-------------------------------------------------------------------------------------------------------------------------------------------
+lema c) prop: evalN (dbAsN d) = dbAsInt d ? 
+dem: por analisis de casos sobre d:
+caso d = O) evalN (dbAsN O) = dbAsInt O
+Izd:
+evalN (dbAsN O)
+=                                                                                                                                   (def dbAsN)
+evalN Z
+=                                                                                                                        (def evalN, caso base)
+0
+Der:
+dbAsInt O
+=                                                                                                                                 (def dbAsInt)
+0
+caso d = I) evalN (dbAsN I) = dbAsInt I
+Izd:
+evalN (dbAsN I)
+=                                                                                                                                   (def dbAsN)
+evalN (S Z)
+=                                                                                                                           (def evalN, n <- Z)
+1 + evalN Z
+=                                                                                                                        (def evalN, caso base)
+1 + 0
+=                                                                                                                              (por aritmetica)
+1
+Der:
+dbAsInt I
+=                                                                                                                                 (def dbAsInt)
+1
+-------------------------------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,183 @@
+ejercicio 1)
+data ExpA = Cte Int
+| Suma ExpA ExpA
+| Prod ExpA ExpA
+
+a)
+evalExpA :: ExpA -> Int
+evalExpA (Cte i)      = i
+evalExpA (Suma e1 e2) = evalExpA e1 + evalExpA e2
+evalExpA (Prod e1 e2) = evalExpA e1 * evalExpA e2
+b)
+simplificarExpA :: ExpA -> ExpA
+simplificarExpA (Cte i)      = (Cte i)
+simplificarExpA (Suma e1 e2) = sumaSinNeutro (simplificarExpA e1) (simplificarExpA e2)   
+simplificarExpA (Prod e1 e2) = prodSinNeutroNiCero (simplificarExpA e1) (simplificarExpA e2)
+
+sumaSinNeutro :: ExpA -> ExpA -> ExpA
+sumaSinNeutro (Cte 0) e2 = e2
+sumaSinNeutro e1 (Cte 0) = e1
+sumaSinNeutro e1 e2 = Suma e1 e2
+
+prodSinNeutroNiCero :: ExpA -> ExpA -> ExpA
+prodSinNeutroNiCero (Cte 1) e2 = e2
+prodSinNeutroNiCero e1 (Cte 1) = e1
+prodSinNeutroNiCero (Cte 0) _ = Cte 0
+prodSinNeutroNiCero _ (Cte 0) = Cte 0
+prodSinNeutroNiCero e1 e2 = Prod e1 e2
+c)
+cantidadDeSumaCero :: ExpA -> Int
+cantidadDeSumaCero (Cte i)      = 0
+cantidadDeSumaCero (Suma e1 e2) = unoSiEsSumaCero e1 e2 + cantidadDeSumaCero e1 + cantidadDeSumaCero e2 
+cantidadDeSumaCero (Prod e1 e2) = cantidadDeSumaCero e1 + cantidadDeSumaCero e2
+
+unoSiEsSumaCero :: ExpA -> ExpA -> Int
+unoSiEsSumaCero (Cte 0) _ = 1  
+unoSiEsSumaCero _ (Cte 0) = 1
+unoSiEsSumaCero e1 e2 = 0
+----------------------------------------------------------------------------------------------------------------------------------------------
+b) i) prop: evalExpA . simplificarExpA = evalExpA ?
+dem: para todo ex :: ExpA. evalExpA . simplificarExpA ex = evalExpA ex ? sea un ex :: ExpA. Qvq evalExpA . simplificarExpA ex = evalExpA ex?
+por induccion estructural sobre ex:
+caso base) evalExpA . simplificarExpA (Cte i) = evalExpA (Cte i)
+caso ind. 1) Hi.1) evalExpA . simplificarExpA e1 = evalExpA e1
+             Hi.2) evalExpA . simplificarExpA e2 = evalExpA e2
+             Te) evalExpA . simplificarExpA (Suma e1 e2) = evalExpA (Suma e1 e2)
+caso ind. 2) Hi.1) evalExpA . simplificarExpA e1 = evalExpA e1
+             Hi.2) evalExpA . simplificarExpA e2 = evalExpA e2
+             Te) evalExpA . simplificarExpA (Prod e1 e2) = evalExpA (Prod e1 e2)
+lema 1) evalExpA (sumaSinNeutro e1 e2) = evalExpA e1 + evalExpA e2 
+lema 2) evalExpA (prodSinNeutroNiCero e1 e2) = evalExpA e1 * evalExpA e2
+
+dem caso base) 
+Izd:
+evalExpA . simplificarExpA (Cte i)
+=                                                                                  (def (.), f <- evalExpA, g <- simplificarExpA, x <- (Cte i))
+evalExpA (simplificarExpA (Cte i))
+=                                                                                                              (def simplificarExpA, caso base)
+evalExpA (Cte i)
+=                                                                                                                     (def evalExpA, caso base)
+i
+Der:
+evalExpA (Cte i)
+=                                                                                                                     (def evalExpA, caso base)
+i
+
+dem caso ind.1)
+Izd:
+evalExpA . simplificarExpA (Suma e1 e2)
+=                                                                             (def (.), f <- evalExpA, g <- simplificarExpA, x <- (Suma e1 e2))
+evalExpA (simplificarExpA (Suma e1 e2))
+=                                                                                                     (def simplificarExpA, e1 <- e1, e2 <- e2)
+evalExpA (sumaSinNeutro (simplificarExpA e1) (simplificarExpA e2))
+=                                                                                                                                   (por lema 1)
+evalExpA (simplificarExpA e1) + evalExpA (simplificarExpA e2) 
+=                                                                                                                         (por hipotesis 1 y 2)
+evalExpA e1 + evalExpA e2 
+Der:
+evalExpA (Suma e1 e2)
+=                                                                                                            (def evalExpA, e1 <- e1, e2 <- e2)
+evalExpA e1 + evalExpA e2 
+
+dem caso ind.2)
+Izd:
+evalExpA . simplificarExpA (Prod e1 e2)
+=                                                                             (def (.), f <- evalExpA, g <- simplificarExpA, x <- (Prod e1 e2))
+evalExpA (simplificarExpA (Prod e1 e2))
+=                                                                                                     (def simplificarExpA, e1 <- e1, e2 <- e2)
+evalExpA (prodSinNeutroNiCero (simplificarExpA e1) (simplificarExpA e2))
+=                                                                                                                                  (por lema 2)
+evalExpA (simplificarExpA e1) * evalExpA (simplificarExpA e2) 
+=                                                                                                                         (por hipotesis 1 y 2)
+evalExpA e1 * evalExpA e2 
+Der:
+evalExpA (Prod e1 e2)
+=                                                                                                            (def evalExpA, e1 <- e1, e2 <- e2)
+evalExpA e1 * evalExpA e2
+----------------------------------------------------------------------------------------------------------------------------------------------
+ii) prop: cantidadSumaCero . simplificarExpA = const 0 ?
+dem: para todo ex :: ExpA. cantidadSumaCero . simplificarExpA ex = const 0 ex ?
+sea ex :: ExpA. cantidadSumaCero . simplificarExpA ex = const 0 ex? por induccion estructural sobre ex:
+caso base) cantidadSumaCero . simplificarExpA (Cte i) = const 0 (Cte i) ?
+caso ind. 1) Hi.1) cantidadSumaCero . simplificarExpA e1 = const 0 e1 !
+             Hi.2) cantidadSumaCero . simplificarExpA e2 = const 0 e2 !
+             Te) cantidadSumaCero . simplificarExpA (Suma e1 e2) = const 0 (Suma e1 e2) ?
+caso ind. 2) Hi.1) cantidadSumaCero . simplificarExpA e1 = const 0 e1 !
+             Hi.2) cantidadSumaCero . simplificarExpA e2 = const 0 e2 !
+             Te) cantidadSumaCero . simplificarExpA (Prod e1 e2) = const 0 (Prod e1 e2) ?
+lema 1) cantidadSumaCero (sumaSinNeutro e1 e2) = cantidadSumaCero e1 + cantidadSumaCero e2 
+lema 2) cantidadSumaCero (prodSinNeutroNiCero e1 e2) = cantidadSumaCero e1 + cantidadSumaCero e2
+
+dem caso base)
+Izd:
+cantidadSumaCero . simplificarExpA (Cte i) 
+=                                                                          (def (.), f <- cantidadSumaCero, g <- simplificarExpA, x <- (Cte i))
+cantidadSumaCero (simplificarExpA (Cte i)) 
+=                                                                                                              (def simplificarExpA, caso base)
+cantidadSumaCero (Cte i) 
+=                                                                                                             (def cantidadSumaCero, caso base)
+0
+Der:
+const 0 (Cte i)
+=                                                                                                                                   (def const)
+0
+
+caso ind. 1)
+Izd:
+cantidadSumaCero . simplificarExpA (Suma e1 e2)
+=                                                                     (def (.), f <- cantidadSumaCero, g <- simplificarExpA, x <- (Suma e1 e2))
+cantidadSumaCero (simplificarExpA (Suma e1 e2))
+=                                                                                                     (def simplificarExpA, e1 <- e1, e2 <- e2)
+cantidadSumaCero (sumaSinNeutro (simplificarExpA e1) (simplificarExpA e2))
+=                                                                                                                                  (por lema 1)
+cantidadSumaCero (simplificarExpA e1) + cantidadSumaCero (simplificarExpA e2) 
+=                                                                                                                         (por hipotesis 1 y 2)
+const 0 e1 + const 0 e2
+=                                                                                                                           (def const, x <- 0)
+0 + 0
+=                                                                                                                              (por aritmetica)
+0
+Der:
+const 0 (Suma e1 e2)
+=                                                                                                                           (def const, x <- 0)
+0
+
+caso ind. 2)
+Izd:
+cantidadSumaCero . simplificarExpA (Prod e1 e2) 
+=                                                                     (def (.), f <- cantidadSumaCero, g <- simplificarExpA, x <- (Prod e1 e2))
+cantidadSumaCero (simplificarExpA (Prod e1 e2))
+=                                                                                                     (def simplificarExpA, e1 <- e1, e2 <- e2)
+cantidadSumaCero (prodSinNeutroNiCero (simplificarExpA e1) (simplificarExpA e2))
+=                                                                                                                                  (por lema 2)
+cantidadSumaCero (simplificarExpA e1) + cantidadSumaCero (simplificarExpA e2) 
+=                                                                                                                         (por hipotesis 1 y 2)
+const 0 e1 + const 0 e2
+=                                                                                                                           (def const, x <- 0)
+0 + 0
+=                                                                                                                              (por aritmetica)
+0
+Der:
+const 0 (Prod e1 e2) 
+=                                                                                                                           (def const, x <- 0)
+0
+ejercicio 2)
+data ExpS = CteS N
+| SumS ExpS ExpS
+| ProdS ExpS ExpS
+
+a) i)
+evalES :: ExpS -> Int
+evalES (CteS n)     = evalN n    
+evalES (SumS e1 e2) = evalES e1 + evalES e2
+evalES (ProdS e1 e2) = evalES e1 * evalES e2
+ii)
+es2ExpA :: ExpS -> ExpA
+es2ExpA (CteS n)      = Cte (evalN n)
+es2ExpA (SumS e1 e2)  = Suma (es2ExpA e1) (es2ExpA e2)
+es2ExpA (ProdS e1 e2) = Prod (es2ExpA e1) (es2ExpA e2)
+iii)
+expA2es :: ExpA -> ExpS
+expA2es (Cte i)      = CteS (int2N i)
+expA2es (Sum e1 e2)  = SumaS (expA2es e1) (expA2es e2)
+expA2es (Prod e1 e2) = ProdS (expA2es e1) (expA2es e2)
