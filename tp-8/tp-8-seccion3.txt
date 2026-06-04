@@ -161,6 +161,7 @@ Der:
 const 0 (Prod e1 e2) 
 =                                                                                                                           (def const, x <- 0)
 0
+----------------------------------------------------------------------------------------------------------------------------------------------
 ejercicio 2)
 data ExpS = CteS N
 | SumS ExpS ExpS
@@ -179,5 +180,185 @@ es2ExpA (ProdS e1 e2) = Prod (es2ExpA e1) (es2ExpA e2)
 iii)
 expA2es :: ExpA -> ExpS
 expA2es (Cte i)      = CteS (int2N i)
-expA2es (Sum e1 e2)  = SumaS (expA2es e1) (expA2es e2)
+expA2es (Sum e1 e2)  = SumS (expA2es e1) (expA2es e2)
 expA2es (Prod e1 e2) = ProdS (expA2es e1) (expA2es e2)
+
+b) i) prop: evalExpA . es2ExpA = evalES ?
+dem: por ppio de ext. para todo exS :: ExpS. evalExpA . es2ExpA exS = evalES exS ? sea exS :: ExpS. ExpS. evalExpA . es2ExpA exS = evalES exS ?
+por induccion estructural sobre exS:
+caso base) evalExpA . es2ExpA (CteS n) = evalES (CteS n) ?
+caso ind.1) Hi.1) evalExpA . es2ExpA exS1 = evalES exS1 !
+            Hi.2) evalExpA . es2ExpA exS2 = evalES exS2 !
+            Te) evalExpA . es2ExpA (SumS exS1 exS2) = evalES (SumS exS1 exS2) ?
+caso ind.2) Hi.1) evalExpA . es2ExpA exS1 = evalES exS1 !
+            Hi.2) evalExpA . es2ExpA exS2 = evalES exS2 !
+            Te) evalExpA . es2ExpA (ProdS exS1 exS2) = evalES (ProdS exS1 exS2) ?
+
+dem caso base)
+Izd:
+evalExpA . es2ExpA (CteS n)
+=                                                                                         (def (.), f <- evalExpA, g <- es2ExpA, x <- (CteS n))
+evalExpA (es2ExpA (CteS n))
+=                                                                                                                         (def es2ExpA, n <- n)
+evalExpA (Cte (evalN n))
+=                                                                                                                (def evalExpA, i <- (evalN n))
+evalN n
+Der:
+evalES (CteS n)
+=                                                                                                                          (def evalES, n <- n)
+evalN n
+
+dem caso ind.1)
+Izd:
+evalExpA . es2ExpA (SumS exS1 exS2)
+=                                                                                 (def (.), f <- evalExpA, g <- es2ExpA, x <- (SumS exS1 exS2))
+evalExpA (es2ExpA (SumS exS1 exS2))
+=                                                                                                         (def es2ExpA, e1 <- exS1, e2 <- exS2)
+evalExpA (Suma (es2ExpA exS1) (es2ExpA exS2))
+=                                                                                    (def evalExpA, e1 <- (es2ExpA exS1), e2 <- (es2ExpA exS2))
+evalExpA (es2ExpA exS1) + evalExpA (es2ExpA exS2)
+=                                                                                                                               (por hipotesis)
+evalES exS1 + evalES exS2 
+Der:
+evalES (SumS exS1 exS2)
+=                                                                                                          (def evalES, e1 <- exS1, e2 <- exS2)
+evalES exS1 + evalES exS2
+
+dem caso ind.2)
+Izd:
+evalExpA . es2ExpA (ProdS exS1 exS2)
+=                                                                                (def (.), f <- evalExpA, g <- es2ExpA, x <- (ProdS exS1 exS2))
+evalExpA (es2ExpA (ProdS exS1 exS2))
+=                                                                                                         (def es2ExpA, e1 <- exS1, e2 <- exS2)
+evalExpA (Prod (es2ExpA exS1) (es2ExpA exS2))
+=                                                                                    (def evalExpA, e1 <- (es2ExpA exS1), e2 <- (es2ExpA exS2))
+evalExpA (es2ExpA exS1) * evalExpA (es2ExpA exS2)
+=                                                                                                                               (por hipotesis)
+evalES exS1 + evalES exS2 
+Der:
+evalES (ProdS exS1 exS2)
+=                                                                                                          (def evalES, e1 <- exS1, e2 <- exS2)
+evalES exS1 * evalES exS2
+----------------------------------------------------------------------------------------------------------------------------------------------
+ii) prop: evalES . expA2es = evalExpA ?
+dem: por ppio de ext. para todo ex :: ExpA. evalES . expA2es ex = evalExpA ex ? sea ex :: ExpA. evalES . expA2es ex = evalExpA ex ?
+por induccion estructural sobre ex:
+caso base) evalES . expA2es (Cte i) = evalExpA (Cte i) ?
+caso ind.1) Hi.1) evalES . expA2es ex1 = evalExpA ex1 ! 
+            Hi.2) evalES . expA2es ex2 = evalExpA ex2 !
+            Te)  evalES . expA2es (Suma ex1 ex2) = evalExpA (Suma ex1 ex2)
+caso ind.2) Hi.1) evalES . expA2es ex1 = evalExpA ex1 ! 
+            Hi.2) evalES . expA2es ex2 = evalExpA ex2 !
+            Te)  evalES . expA2es (Prod ex1 ex2) = evalExpA (Prod ex1 ex2)
+
+dem caso base) 
+Izd:
+evalES . expA2es (Cte i)
+=                                                                                            (def (.), f <- evalES, g <- expA2es, x <- (Cte i))
+evalES (expA2es (Cte i))
+=                                                                                                                         (def expA2es, n <- i)
+evalES (CteS (int2N i))
+=                                                                                                                  (def evalES, n <- (int2N i))
+evalN (int2N i)
+=                                                                                                  (por Lema de sección II: evalN . int2N = id)
+i
+Der:
+evalExpA (Cte i)
+=                                                                                                                        (def evalExpA, n <- i)
+i
+
+dem caso ind.1)
+Izd:
+evalES . expA2es (Suma ex1 ex2)
+=                                                                                     (def (.), f <- evalES, g <- expA2es, x <- (Suma ex1 ex2))
+evalES (expA2es (Suma ex1 ex2))
+=                                                                                                           (def expA2es, e1 <- ex1, e2 <- ex2)
+evalES (SumS (expA2es e1) (expA2es e2))
+=                                                                                          (def evalES, e1 <- (expA2es e1), e2 <- (expA2es e2))
+evalES (expA2es e1) + evalES (expA2es e2)
+=                                                                                                                               (por hipotesis)
+evalExpA ex1 + evalExpA ex2
+Der:
+evalExpA (Suma ex1 ex2)
+=                                                                                                         (def evalExpA, e1 <- ex1, e2 <- ex2)
+evalExpA ex1 + evalExpA ex2
+
+dem caso ind.2)
+Izd:
+evalES . expA2es (Prod ex1 ex2)
+=                                                                                     (def (.), f <- evalES, g <- expA2es, x <- (Prod ex1 ex2))
+evalES (expA2es (Prod ex1 ex2))
+=                                                                                                           (def expA2es, e1 <- ex1, e2 <- ex2)
+evalES (ProdS (expA2es ex1) (expA2es ex2))
+=                                                                                          (def evalES, e1 <- (expA2es e1), e2 <- (expA2es e2))
+evalES (expA2es ex1) * evalES (expA2es ex2)
+=                                                                                                                               (por hipotesis)
+evalExpA ex1 * evalExpA ex2
+Der:
+evalExpA (Prod ex1 ex2)
+=                                                                                                         (def evalExpA, e1 <- ex1, e2 <- ex2)
+evalExpA ex1 * evalExpA ex2
+----------------------------------------------------------------------------------------------------------------------------------------------
+iii) prop: es2ExpA . expA2es = id ?
+dem: por ppio de ext. para todo ex :: ExpA. sea ex :: ExpA. es2ExpA . expA2es ex = id ex ? por induccion estructural sobre ex:
+caso base) es2ExpA . expA2es (Cte i) = id (Cte i) ?
+caso ind.1) Hi.1) es2ExpA . expA2es ex1 = id ex1 !
+            Hi.2) es2ExpA . expA2es ex2 = id ex2 !
+            Te) es2ExpA . expA2es (Suma ex1 ex2) = id (Suma ex1 ex2) ?
+caso ind.2) Hi.1) es2ExpA . expA2es ex1 = id ex1 !
+            Hi.2) es2ExpA . expA2es ex2 = id ex2 !
+            Te) es2ExpA . expA2es (prod ex1 ex2) = id (prod ex1 ex2) ?
+
+dem caso base)
+Izd:
+es2ExpA . expA2es (Cte i)
+=                                                                                           (def (.), f <- es2ExpA, g <- expA2es, x <- (Cte i))
+es2ExpA (expA2es (Cte i))
+=                                                                                                                         (def expA2es, i <- i)
+es2ExpA (CteS (int2N i))
+=                                                                                                                         (def es2ExpA, i <- i)
+Cte (evalN (int2n i))
+=                                                                                                  (por Lema de sección II: evalN . int2N = id)
+Cte (id i)
+=                                                                                                                                      (def id)
+Cte i
+Der:
+id (Cte i) 
+=                                                                                                                                      (def id)
+Cte i
+
+dem caso ind.1)
+Izd:
+es2ExpA . expA2es (Suma ex1 ex2)
+=                                                                                    (def (.), f <- es2ExpA, g <- expA2es, x <- (Suma ex1 ex2))
+es2ExpA (expA2es (Suma ex1 ex2))
+=                                                                                                           (def expA2es, e1 <- ex1, e2 <- ex2)
+es2ExpA (SumS (expA2es ex1) (expA2es ex2))
+=                                                                                       (def es2ExpA, e1 <- (expA2es ex1), e2 <- (expA2es ex2))
+Suma (es2ExpA (expA2es ex1)) (es2ExpA (expA2es ex2))
+=                                                                                                                         (por hipotesis 1 y 2)
+Suma (id ex1) (id ex2)
+=                                                                                                                            (def id dos veces)
+Suma ex1 ex2
+Der:
+id (Suma ex1 ex2)
+=                                                                                                                                      (def id)
+Suma ex1 ex2
+
+dem caso ind.2)
+Izd:
+es2ExpA . expA2es (prod ex1 ex2)
+=                                                                                    (def (.), f <- es2ExpA, g <- expA2es, x <- (prod ex1 ex2))
+es2ExpA (expA2es (prod ex1 ex2))
+=                                                                                                           (def expA2es, e1 <- ex1, e2 <- ex2)
+es2ExpA (ProdS (expA2es ex1) (expA2es ex2))
+=                                                                                       (def es2ExpA, e1 <- (expA2es ex1), e2 <- (expA2es ex2))
+Prod (es2ExpA (expA2es ex1)) (es2ExpA (expA2es ex2))
+=                                                                                                                         (por hipotesis 1 y 2)
+Prod (id ex1) (id ex2)
+=                                                                                                                            (def id dos veces)
+Prod ex1 ex2
+Der:
+id (prod ex1 ex2)
+=                                                                                                                                      (def id)
+Prod ex1 ex2

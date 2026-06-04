@@ -1,0 +1,657 @@
+ejercicio 1)
+data EA = Const Int | BOp BinOp EA EA
+data BinOp = Sum | Mul
+
+a) i) 
+evalEA :: EA -> Int
+evalEA (Const i)      = i 
+evalEA (BOp op e1 e2) = operar op e1 e2
+
+operar :: BinOp -> EA -> EA -> Int
+operar Sum e1 e2 = evalEA e1 + evalEA e2
+operar Mul e1 e2 = evalEA e1 * evalEA e2
+ii)
+ea2ExpA :: EA -> ExpA
+ea2ExpA (Const i)        = Cte i
+ea2ExpA (BOp Sum e1 e2) = Suma (ea2ExpA e1) (ea2ExpA e2)
+ea2ExpA (BOp Mul e1 e2)  = Prod (ea2ExpA e1) (ea2ExpA e2)
+iii)
+expA2ea :: ExpA -> EA
+expA2ea (Cte i)      = Const i
+expA2ea (Suma e1 e2) = BOp Sum (expA2ea e1) (expA2ea e2)
+expA2ea (Prod e1 e2) = BOp Mul (expA2ea e1) (expA2ea e2)
+
+b) i) prop: ea2ExpA . expA2ea = id ?
+dem: por ppio de ext. para todo ex :: ExpA. ea2ExpA . expA2ea ex = id ex ? sea ex :: ExpA. Qvq ea2ExpA . expA2ea ex = id ex ? 
+por induccion estructural sobre ex:
+caso base) ea2ExpA . expA2ea (Cte i) = id (Cte i)
+caso ind.1) Hi.1) ea2ExpA . expA2ea e1 = id e1
+            Hi.2) ea2ExpA . expA2ea e2 = id e2
+            Te) ea2ExpA . expA2ea (Suma e1 e2) = id (Suma e1 e2)
+caso ind.2) Hi.1) ea2ExpA . expA2ea e1 = id e1
+            Hi.2) ea2ExpA . expA2ea e2 = id e2
+            Te) ea2ExpA . expA2ea (Prod e1 e2) = id (Prod e1 e2)
+
+dem caso base)
+Izd:
+ea2ExpA . expA2ea (Cte i)
+=                                                                                           (def (.), f <- ea2ExpA, g <- expA2ea, x <- (Cte i))
+ea2ExpA (expA2ea (Cte i))
+=                                                                                                                         (def expA2ea, i <- i)
+ea2ExpA (Const i)
+=                                                                                                                         (def ea2ExpA, i <- i)
+Cte i
+Der:
+id (Cte i)
+=                                                                                                                                      (def id)
+Cte i
+
+dem caso ind.1)
+Izd:
+ea2ExpA . expA2ea (Suma e1 e2)
+=                                                                                      (def (.), f <- ea2ExpA, g <- expA2ea, x <- (Suma e1 e2))
+ea2ExpA (expA2ea (Suma e1 e2))
+=                                                                                                             (def expA2ea, e1 <- e1, e2 <- e2)
+ea2ExpA (BOp Sum (expA2ea e1) (expA2ea e2))
+=                                                                                         (def ea2ExpA, e1 <- (expA2ea e1), e2 <- (expA2ea e2))
+Suma (ea2ExpA (expA2ea e1)) (ea2ExpA (expA2ea e2))
+=                                                                                                                         (por hipotesis 1 y 2)
+Suma (id e1) (id e2)
+=                                                                                                                           (def id, dos veces)
+Suma e1 e2
+Der:
+id (Suma e1 e2)
+=                                                                                                                           (def id, dos veces)
+Suma e1 e2
+
+dem caso ind.2)
+Izd:
+ea2ExpA . expA2ea (Prod e1 e2)
+=                                                                                      (def (.), f <- ea2ExpA, g <- expA2ea, x <- (Prod e1 e2))
+ea2ExpA (expA2ea (Prod e1 e2))
+=                                                                                                             (def expA2ea, e1 <- e1, e2 <- e2)
+ea2ExpA (BOp Mul (expA2ea e1) (expA2ea e2))
+=                                                                                         (def ea2ExpA, e1 <- (expA2ea e1), e2 <- (expA2ea e2))
+Prod (ea2ExpA (expA2ea e1)) (ea2ExpA (expA2ea e2))
+=                                                                                                                         (por hipotesis 1 y 2)
+Prod (id e1) (id e2)
+=                                                                                                                           (def id, dos veces)
+Prod e1 e2
+Der:
+id (Prod e1 e2)
+=                                                                                                                           (def id, dos veces)
+Prod e1 e2
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ii) prop: expA2ea . ea2ExpA = id ?
+dem: por ppio de ext. para todo ex :: EA. expA2ea . ea2ExpA ex = id ex ? sea ex :: EA. Qvq expA2ea . ea2ExpA ex = id ex ? 
+por induccion estructural sobre ex:
+caso base) expA2ea . ea2ExpA (Const i) = id (Const i)
+caso ind.) Hi.1) expA2ea . ea2ExpA e1 = id e1
+           Hi.2) expA2ea . ea2ExpA e2 = id e2
+           Te) expA2ea . ea2ExpA (BOp op e1 e2) = id (BOp op e1 e2)
+
+dem caso base)
+Izd:
+expA2ea . ea2ExpA (Const i)
+=                                                                                         (def (.), f <- expA2ea, g <- ea2ExpA, x <- (Const i))
+expA2ea (ea2ExpA (Const i))
+=                                                                                                                         (def ea2ExpA, i <- i)
+expA2ea (Cte i)
+=                                                                                                                         (def expA2ea, i <- i)
+Const i
+Der:
+id (Const i)
+=                                                                                                                                      (def id)
+Const i
+
+dem ind.)
+Izd:
+expA2ea . ea2ExpA (BOp op e1 e2)
+=                                                                                    (def (.), f <- expA2ea, g <- ea2ExpA, x <- (BOp op e1 e2))
+expA2ea (ea2ExpA (BOp op e1 e2))
+    caso op = Sum) 
+        expA2ea (ea2ExpA (BOp Sum e1 e2))
+        =                                                                                 (def expA2ea, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        expA2ea (Suma (ea2ExpA e1) (ea2ExpA e2))
+        =                                                                                 (def expA2ea, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        BOp Sum (expA2ea (ea2ExpA e1)) (expA2ea (ea2ExpA e2))
+        =                                                                                                                 (por hipotesis 1 y 2)
+        BOp Sum (id e1) (id e2)
+        =                       expA2ea (Suma (ea2ExpA e1) (ea2ExpA e2))                                                                                           (def id, dos veces)
+        BOp Sum e1 e2
+    caso op = Mul)  
+        expA2ea (ea2ExpA (BOp Mul e1 e2))
+        =                                                                                 (def ea2ExpA, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        expA2ea (Prod (ea2ExpA e1) (ea2ExpA e2))
+        =                                                                                 (def expA2ea, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        BOp Mul (expA2ea (ea2ExpA e1)) (expA2ea (ea2ExpA e2))
+        =                                                                                                                 (por hipotesis 1 y 2)
+        BOp Mul (id e1) (id e2)
+        =                                                                                                                 (def id, dos veces)
+        BOp Mul e1 e2
+Der:
+id (BOp op e1 e2)
+=                                                                                                                                      (def id)
+BOp op e1 e2
+    caso op = Sum)
+        BOp Sum e1 e2
+    caso op = Mul)
+        BOp Mul e1 e2
+-----------------------------------------------------------------------------------------------------------------------------------------------
+iii) prop: evalExpA . ea2ExpA = evalEA ?
+dem: por ppio de ext. para todo ea :: EA. evalExpA . ea2ExpA ea = evalEA ea? sea ea :: EA. evalExpA . ea2ExpA ea = evalEA ea ?
+por induccion estructural sobre ea:
+caso base) evalExpA . ea2ExpA (Const i) = evalEA (Const i) ?
+caso ind.) Hi.1) evalExpA . ea2ExpA e1 = evalEA e1 ?
+           Hi.2) evalExpA . ea2ExpA e2 = evalEA e2 ?
+           Te) evalExpA . ea2ExpA (BOp op e1 e2) = evalEA (BOp op e1 e2) ?
+
+dem caso base)
+Izd:
+evalExpA . ea2ExpA (Const i)
+=                                                                                        (def (.), f <- evalExpA, g <- ea2ExpA, x <- (Const i))
+evalExpA (ea2ExpA (Const i))
+=                                                                                                                         (def ea2ExpA, i <- i)
+evalExpA (Cte i)
+=                                                                                                                         (def evalExpA, i <- i)
+i
+Der:
+evalEA (Const i)
+=                                                                                                                         (def evalEA, i <- i)
+i
+
+caso ind.)
+Izd:
+evalExpA . ea2ExpA (BOp op e1 e2)
+=                                                                                   (def (.), f <- evalExpA, g <- ea2ExpA, x <- (BOp op e1 e2))
+evalExpA (ea2ExpA (BOp op e1 e2))
+    caso op = Sum)
+        evalExpA (ea2ExpA (BOp Sum e1 e2))
+        =                                                                                                     (def ea2ExpA, e1 <- e1, e2 <- e2)
+        evalExpA (Suma (ea2ExpA e1) (ea2ExpA e2))
+        =                                                                                (def evalExpA, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        evalExpA (ea2ExpA e1) + evalExpA (ea2ExpA e2)
+        =                                                                                                                 (por hipotesis 1 y 2)
+        evalEA e1 + evalEA e2
+    caso op = Mul)
+        evalExpA (ea2ExpA (BOp Mul e1 e2))
+        =                                                                                                     (def ea2ExpA, e1 <- e1, e2 <- e2)
+        evalExpA (Prod (ea2ExpA e1) (ea2ExpA e2))
+        =                                                                                (def evalExpA, e1 <- (ea2ExpA e1), e2 <- (ea2ExpA e2))
+        evalExpA (ea2ExpA e1) * evalExpA (ea2ExpA e2)
+        =                                                                                                                 (por hipotesis 1 y 2)
+        evalEA e1 * evalEA e2
+Der:
+evalEA (BOp op e1 e2)
+=                                                                                                              (def evalEA, e1 <- e1, e2 <- e2)
+operar op e1 e2
+    caso op = Sum)
+        operar Sum e1 e2
+        =                                                                                                      (def operar, e1 <- e1, e2 <- e2)
+        evalEA e1 + evalEA e2
+    caso op = Mul)
+        operar Mul e1 e2
+        =                                                                                                      (def operar, e1 <- e1, e2 <- e2)
+        evalEA e1 * evalEA e2
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 2)
+a)
+data Arbol a b = Hoja b | Nodo a (Arbol a b) (Arbol a b)
+i)
+cantidadDeHojas :: Arbol a b -> Int
+cantidadDeHojas (Hoja b)       = 1
+cantidadDeHojas (Nodo _ ti td) = cantidadDeHojas ti + cantidadDeHojas td 
+ii)
+cantidadDeNodos :: Arbol a b -> Int
+cantidadDeNodos (Hoja b)       = 0 
+cantidadDeNodos (Nodo _ ti td) = 1 + cantidadDeNodos ti + cantidadDeNodos td
+iii)
+cantidadDeConstructores :: Arbol a b -> Int
+cantidadDeConstructores (Hoja b)       = 1
+cantidadDeConstructores (Nodo _ ti td) = 1 + cantidadDeConstructores ti + cantidadDeConstructores td
+iv)
+ea2Arbol :: EA -> Arbol BinOp Int
+ea2Arbol (Const i)      = Hoja i
+ea2Arbol (BOp op e1 e2) = Nodo op (ea2Arbol e1) (ea2Arbol e2)
+b) prop: para todo t :: Arbol a b cantidadDeHojas t + cantidadDeNodos t = cantidadDeConstructores t ?
+dem: sea t :: Arbol a b. cantidadDeHojas t + cantidadDeNodos t = cantidadDeConstructores t ? por induccion estructural sobre t: 
+caso base) cantidadDeHojas (Hoja b) + cantidadDeNodos (Hoja b) = cantidadDeConstructores (Hoja b)
+caso ind.) Hi.1) cantidadDeHojas ti + cantidadDeNodos ti = cantidadDeConstructores ti
+           Hi.2) cantidadDeHojas td + cantidadDeNodos td = cantidadDeConstructores td
+           Te) cantidadDeHojas (Nodo a ti td) + cantidadDeNodos (Nodo a ti td) = cantidadDeConstructores (Nodo a ti td)
+
+dem caso base) 
+Izd:
+cantidadDeHojas (Hoja b) + cantidadDeNodos (Hoja b)
+=                                                                                                             (def cantidadDeHojas, caso base)
+1 + cantidadDeNodos (Hoja b)
+=                                                                                                             (def cantidadDeNodos, caso base)
+1 + 0
+=                                                                                                                             (por aritmetica)
+1
+Der:
+cantidadDeConstructores (Hoja b)
+=                                                                                                     (def cantidadDeConstructores, caso base)
+1
+
+dem caso ind.)
+Izd:
+cantidadDeHojas (Nodo a ti td) + cantidadDeNodos (Nodo a ti td)
+=                                                                                                                        (def cantidadDeHojas)
+cantidadDeHojas ti + cantidadDeHojas td + cantidadDeNodos (Nodo a ti td)
+=                                                                                                                        (def cantidadDeNodos)
+cantidadDeHojas ti + cantidadDeHojas td + 1 + cantidadDeNodos ti + cantidadDeNodos td
+=                                                                                                                 (por conmutativa de la suma)
+(cantidadDeHojas ti + cantidadDeNodos ti) + 1 + (cantidadDeHojas td + cantidadDeNodos td)
+=                                                                                                                        (por hipotesis 1 y 2)
+cantidadDeConstructores ti + 1 + cantidadDeConstructores td
+=                                                                                                                 (por conmutativa de la suma)
+1 + cantidadDeConstructores ti + cantidadDeConstructores td
+Der:
+cantidadDeConstructores (Nodo a ti td)
+=                                                                                                               (def cantidadDeConstructores)
+1 + cantidadDeConstructores ti + cantidadDeConstructores td
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 3)
+data Tree a = EmptyT | NodeT a (Tree a) (Tree a)
+a) i)
+sumarT :: Tree Int -> Int
+sumarT EmptyT          = 0 
+sumarT (NodeT i ti td) = i + sumarT ti + sumarT td
+ii)
+sizeT :: Tree a -> Int
+sizeT EmptyT          = 0
+sizeT (NodeT i ti td) = 1 + sizeT ti + sizeT td
+iii)
+anyT :: (a -> Bool) -> Tree a -> Bool
+anyT _ EmptyT = False
+anyT f (NodeT a ti td) = (f a) || anyT f ti || anyT f td
+iv)
+countT :: (a -> Bool) -> Tree a -> Int
+countT _ EmptyT          = 0
+countT f (NodeT a ti td) = unoSiceroSino (f a) + countT f ti + countT f td
+v)
+countLeaves :: Tree a -> Int
+countLeaves EmptyT          = 1
+countLeaves (NodeT _ ti td) = countLeaves ti + countLeaves td
+vi)
+heightT :: Tree a -> Int
+heightT EmptyT = 0
+heightT (NodeT _ ti td) = 1 + max (heightT ti) (heightT td)
+vii)
+inOrder :: Tree a -> [a]
+inOrder EmptyT          = []
+inOrder (NodeT a ti td) = inOrder ti ++ [a] ++ inOrder td 
+viii)
+listPerLevel :: Tree a -> [[a]]
+listPerLevel (NodeT x ti td) = [[x]] ++ listaDeNivel (listPerLevel ti) (listPerLevel td)
+listPerLevel EmptyT = []
+
+listaDeNivel :: [[a]] -> [[a]] -> [[a]]
+listaDeNivel [] ys = ys
+listaDeNivel xs [] = xs
+listaDeNivel (x:xs) (y:ys) = (x ++ y) : listaDeNivel xs ys
+ix)
+mirrorT :: Tree a -> Tree a
+mirrorT EmptyT          = EmptyT
+mirrorT (NodeT a ti td) = NodeT a (mirrorT td) (mirrorT ti)
+x)
+levelN :: Int -> Tree a -> [a]
+levelN _ EmptyT          = []
+levelN 0 (NodeT a ti td) = [a]
+levelN n (NodeT a ti td) = (levelN (n - 1) ti) ++ (levelN (n - 1) td)
+xi)
+ramaMasLarga :: Tree a -> [a]
+ramaMasLarga t = snd (ramaMasLargaConLongitud t)
+
+ramaMasLargaConLongitud :: Tree a -> (Int, [a])
+ramaMasLargaConLongitud EmptyT = (0, [])
+ramaMasLargaConLongitud (NodeT x ti td) = 
+    let (longMax, ramaMax) = max (ramaMasLargaConLongitud ti) 
+                                 (ramaMasLargaConLongitud td)
+    in (1 + longMax, x : ramaMax)
+xii)
+todosLosCaminos :: Tree a -> [[a]]
+todosLosCaminos EmptyT          = [[]]
+todosLosCaminos (NodeT a ti td) = insertar a (todosLosCaminos ti ++ todosLosCaminos td)
+
+insertar :: a -> [[a]] -> [[a]]
+insertar a []       = []
+insertar a (xs:xss) = (a : xs) : insertar a xss
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b) i) prop: heightT = length . ramaMasLarga ?
+dem: por ppio de ext. para todo t :: Tree a. heightT t = length . ramaMasLarga t ? sea t :: Tree a. Qvq heightT t = length . ramaMasLarga t
+por induccion estructural sobre t:
+caso base) heightT EmptyT = length . ramaMasLarga EmptyT ?
+caso ind.) Hi.1) heightT ti = length . ramaMasLarga ti !
+           Hi.2) heightT td = length . ramaMasLarga td !
+           Te) heightT (NodeT a ti td) = length . ramaMasLarga (NodeT a ti td) ?
+
+dem caso base)
+Izd:
+heightT EmptyT
+=                                                                                                                   (def heightT, caso base)
+0
+Der:
+length . ramaMasLarga EmptyT
+=                                                                                     (def (.), f <- length, g <- ramaMasLarga, x <- EmptyT)
+length (ramaMasLarga EmptyT)
+=                                                                                                           (def ramaMasLarga, t <- EmptyT)
+length (snd (ramaMasLargaConLongitud EmptyT))
+=                                                                                                  (def ramaMasLargaConLongitud, caso base)
+length (snd (0, []))
+=                                                                                                                                 (def snd)
+length []
+=                                                                                                                   (def length, caso base)
+0
+
+dem caso ind)
+Izd:
+heightT (NodeT a ti td)
+=                                                                                                                            (def heightT)
+1 + max (heightT ti) (heightT td)
+    caso heighT ti >= heightT td)
+        1 + heighT ti
+        =                                                                                                                   (por hipotesis)
+        1 + length . ramaMasLarga ti
+        =                                                                                (def (.), f <- length, g <- ramaMasLarga, x <- ti)
+        1 + length (ramaMasLarga ti)
+    caso height td > heigth ti
+        1 + heighT td
+        =                                                                                                                   (por hipotesis)
+        1 + length . ramaMasLarga td
+        =                                                                                (def (.), f <- length, g <- ramaMasLarga, x <- td)
+        1 + length (ramaMasLarga td)                
+Der:
+length . ramaMasLarga (NodeT a ti td)
+=                                                                           (def (.), f <- length, g <- ramaMasLarga, x <- (NodeT a ti td))
+length (ramaMasLarga (NodeT a ti td))
+=                                                                                                  (def ramaMasLarga, t <- (NodeT a ti td))
+length (snd (ramaMasLargaConLongitud (NodeT a ti td)))
+=                                                                                                             (def ramaMasLargaConLongitud)
+length (snd (let (len, rama) = max (sub ti) (sub td) in (1+len, x:rama)))
+    caso (sub ti) >= (sub td))
+        length (snd (let (len, rama) = (sub ti) in (1+len, x:rama)))
+        =                                                                                                                 (por def de let)        
+        length (snd (1+len, x:rama))
+        =                                                                                                                        (def snd)        
+        length (x:rama)
+        =                                                                                                                     (def length)        
+        1 + length rama
+    caso (sub td) > (sub ti))
+        length (snd (let (len, rama) = (sub td) in (1+len, x:rama)))
+        =                                                                                                                 (por def de let)        
+        length (snd (1+len, x:rama))
+        =                                                                                                                        (def snd)        
+        length (x:rama)
+        =                                                                                                                     (def length)        
+        1 + length rama
+
+son equivalentes ya que rama en cada caso corresponde a la rama mas larga 
+-----------------------------------------------------------------------------------------------------------------------------------------------
+Ejercicio 4)
+data AppList a = Single a
+| Append (AppList a) (AppList a)
+a)
+i)
+lenAL :: AppList a -> Int
+lenAL (Single _)     = 1 
+lenAL (Append xs ys) = lenAL xs + lenAL ys
+ii)
+consAL :: a -> AppList a -> AppList a
+consAL x appList = Append (Single x) appList
+iii)
+headAL :: AppList a -> a
+headAL (Single a)     = a
+headAL (Append xs ys) = headAL xs
+iv)
+tailAL :: AppList a -> AppList a
+tailAL (Single a)             = error "No se puede devolver la cola de una lista con un elemento"
+tailAL (Append (Single a) ys) = ys
+tailAL (Append xs ys)         = Append (tailAL xs) ys
+v)
+snocAL :: AppList a -> a -> AppList a
+snocAL (Single a) x     = Append (Single a) (Single x)
+snocAl (Append xs ys) x = Append xs (snocAl ys x)
+vi)
+lastAL :: AppList a -> a
+lastAL (Single a)     = a
+lastAL (Append xs ys) = lastAl ys
+vii)
+initAL :: AppList a -> AppList a
+initAL (Single a)             = error "no se puede sacar el ultimo elemento de una lista con uno solo"
+initAL (Append xs (Single a)) = xs 
+initAL (Append xs ys)         = Append xs (initAL ys) 
+viii)
+reverseAL :: AppList a -> AppList a
+reverseAL (Single a) = (Single a)
+reverseAL (Append xs ys) = Append (reverseAl ys) (reverseAl xs)
+ix)
+elemAL :: Eq a => a -> AppList a -> Bool
+elemAL x (Single a)     = x == a
+elemAL x (Append xs ys) = (elemAL x xs) || (elemAL x ys)
+x)
+appendAL :: AppList a -> AppList a -> AppList a
+appendAL xs ys = Append xs ys
+xi)
+appListToList :: AppList a -> [a]
+appListToList (Single a)     = [a]
+appListToList (Append xs ys) = appListToList xs ++ appListToList ys
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b) i) prop: para todo xs :: AppList a. para todo ys :: AppList a. lenAL (appendAL xs ys) = lenAL xs + lenAL ys ?
+dem: sea xs :: AppList a. sea ys :: AppList. lenAL (appendAL xs ys) = lenAL xs + lenAL ys ? por induccion estructural sobre xs:
+caso base) lenAL (appendAL (Single a) ys) = lenAL (Single a) + lenAL ys ?
+caso ind.) Hi.1) lenAL (appendAL ws ys) = lenAL ws + lenAL ys !
+           Hi.2) lenAL (appendAL zs ys) = lenAL zs + lenAL ys !
+           Te) lenAL (appendAL (Append ws zs) ys) = lenAL (Append ws zs) + lenAL ys ?
+
+dem caso base)
+Izd:
+    lenAL (appendAL (Single a) ys)
+    =                                                                                                          (def appendAL, xs <- (Single a))
+    lenAL (Append (Single a) ys)
+    =                                                                                                   (def lenAL, xs <- (Single a), ys <- ys)
+    lenAL (Single a) + lenAL ys
+    =                                                                                                                               (def lenAL)
+    1 + lenAL ys
+Der:
+    lenAL (Single a) + lenAL ys
+    =                                                                                                                               (def lenAL)
+    1 + lenAL ys
+
+dem caso ind.)
+Izd:    
+    lenAL (appendAL (Append ws zs) ys)
+    =                                                                                             (def appendAL, xs <- (Append ws zs), ys <- ys)
+    lenAL (Append (Append ws zs) ys)
+    =                                                                                                (def lenAL, xs <- (Append ws zs), ys <- ys)
+    lenAL (Append ws zs) + lenAL ys
+    =                                                                                                           (def lenAL, xs <- ws, ys <- zs)
+    lenAL ws + lenAl zs + lenAL ys
+Der:
+    lenAL (Append ws zs) + lenAL ys 
+    =                                                                                                           (def lenAL, xs <- ws, ys <- zs)
+    lenAL ws + lenAl zs + lenAL ys
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ii) prop: reverseAL . reverseAL = id ? 
+dem: por ppio de ext. para todo xs :: AppList a. reverseAL . reverseAL xs = id xs ? sea xs :: AppList a. reverseAL . reverseAL xs = id xs ?
+por induccion estructural sobre xs:
+caso base) reverseAL . reverseAL (Single a) = id (Single a)
+caso ind.) Hi.1) reverseAL . reverseAL ys = id ys
+           Hi.2) reverseAL . reverseAL zs = id zs
+           Te) reverseAL . reverseAL (Append ys zs) = id (Append ys zs)
+
+dem caso base)
+Izd:
+    reverseAL . reverseAL (Single a)
+    =                                                                                (def (.), f <- reverseAL, g <- reverseAL, x <- (Single a))
+    reverseAL (reverseAL (Single a))
+    =                                                                                                                           (def reverseAL)
+    reverseAL (Single a)
+    =                                                                                                                           (def reverseAL)
+    (Single a)
+Der:
+    id (Single a)
+    =                                                                                                                                  (def id)
+    (Single a)
+
+dem caso ind.)
+Izd:
+    reverseAL . reverseAL (Append ys zs)
+    =                                                                            (def (.), f <- reverseAL, g <- reverseAL, x <- (Append ys zs))
+    reverseAL (reverseAL (Append ys zs))
+    =                                                                                                       (def reverseAL, xs <- ys, ys <- zs)
+    reverseAL (Append (reverseAl zs) (reverseAl ys))
+    =                                                                               (def reverseAL, xs <- (reverseAl zs), ys <- (reverseAl ys))
+    Append (reverseAl (reverseAl ys)) (reverseAl (reverseAl zs))
+    =                                                                                                                     (por hipotesis 1 y 2)
+    Append (id ys) (id zs)
+    =                                                                                                                       (def id, dos veces)
+    Append ys zs
+Der:
+    id (Append ys zs)
+    =                                                                                                                                  (def id)    
+    Append ys zs
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 5)
+data QuadTree a = LeafQ a
+| NodeQ (QuadTree a) (QuadTree a)
+(QuadTree a) (QuadTree a)
+data Color = RGB Int Int Int
+type Image = QuadTree Color
+a) i) 
+heightQT :: QuadTree a -> Int
+heightQT (LeafQ a)           = 0
+heightQT (NodeQ n1 n2 n3 n4) = 1 + max (max (heightQT n1) (heightQT n2)) (max (heightQT n3) (heightQT n4))
+ii)
+countLeavesQT :: QuadTree a -> Int
+countLeavesQT (LeafQ a)           = 1  
+countLeavesQT (NodeQ n1 n2 n3 n4) = countLeavesQT n1 + countLeavesQT n2 + countLeavesQT n3 + countLeavesQT n4
+iii)
+sizeQT :: QuadTree a -> Int
+sizeQT (LeafQ a)           = 1
+sizeQT (NodeQ n1 n2 n3 n4) = 1 + sizeQT n1 + sizeQT n2 + sizeQT n3 + sizeQT n4
+iv)
+compress :: QuadTree a -> QuadTree a
+compress (LeafQ a)           = (LeafQ a)  
+compress (NodeQ n1 n2 n3 n4) = compressNode (compress n1) (compress n2) (compress n3) (compress n4)
+
+nodeQ :: Eq a => QuadTree a -> QuadTree a -> QuadTree a -> QuadTree a -> QuadTree a
+nodeQ (LeafQ a) (LeafQ b) (LeafQ c) (LeafQ d) = 
+    if a == b && b == c && c == d
+        then LeafQ a
+        else NodeQ (LeafQ a) (LeafQ b) (LeafQ c) (LeafQ d)
+nodeQ n1 n2 n3 n4 = NodeQ n1 n2 n3 n4
+v)
+uncompress :: QuadTree a -> QuadTree a
+uncompress qT = uncompressN (heightQT qT) qT
+
+uncompressN :: Int -> QuadTree a -> QuadTree a
+uncompressN 0 (LeafQ a)           = LeafQ a
+uncompressN n (LeafQ a) = let nodos = uncompressN (n - 1) (LeafQ a)
+                            in NodeQ nodos nodos nodos nodos
+uncompressN n (NodeQ n1 n2 n3 n4) = NodeQ (uncompressN (n - 1) n1) (uncompressN (n - 1) n2) (uncompressN (n - 1) n3) (uncompressN (n - 1) n4)
+vi)
+render :: Image -> Int -> Image
+render image i = renderN (logBase 4 i) image
+
+renderN :: Int -> QuadTree a -> Color -> QuadTree a
+renderN 0 t         = t
+renderN n (LeafQ c) = NodeQ nodos nodos nodos nodos
+                            where nodos = renderN (n - 1) (LeafQ c) 
+renderN n (NodeQ n1 n2 n3 n4) = NodeQ (renderN (n - 1) n1) (renderN (n - 1) n2) (renderN (n - 1) n3) (renderN (n - 1) n4)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b) i) prop: countLeavesQT . uncompress = (logBase 4) . heightQT ?
+dem: por ppio de ext. para todo QT :: QuadTree a. countLeavesQT . uncompress QT = (logBase 4) . heightQT QT ? 
+sea qt :: QuadTree a. countLeavesQT . uncompress qt = (logBase 4) . heightQT qt ?
+por induccion estructural sobre qt: 
+caso base) countLeavesQT . uncompress (LeafQ a) = (logBase 4) . heightQT (LeafQ a) ?
+caso ind.) Hi.1) countLeavesQT . uncompress n1 = (logBase 4) . heightQT n1 !
+           Hi.2) countLeavesQT . uncompress n2 = (logBase 4) . heightQT n2 !
+           Hi.3) countLeavesQT . uncompress n3 = (logBase 4) . heightQT n3 !
+           Hi.4) countLeavesQT . uncompress n4 = (logBase 4) . heightQT n4 !
+           Te) countLeavesQT . uncompress (NodeQ n1 n2 n3 n4) = (logBase 4) . heightQT (NodeQ n1 n2 n3 n4) ?
+
+dem caso base)
+Izd:
+    countLeavesQT . uncompress (LeafQ a)
+    =                                                                            (def (.), f <- countLeavesQT, g <- uncompress, x <- (LeafQ a))
+    countLeavesQT (uncompress (LeafQ a))
+    =                                                                                                         (def uncompress, qT <- (LeafQ a))
+    countLeavesQT (uncompressN (heightQT (LeafQ a)) (LeafQ a))
+    =                                                                                                                            (def heightQT)
+    countLeavesQT (uncompressN 0 (LeafQ a))
+    =                                                                                                                         (def uncompressN)
+    countLeavesQT (LeafQ a)
+    =                                                                                                                       (def countLeavesQT)
+    1
+Der:
+    (logBase 4) . heightQT (LeafQ a)
+    =                                                                                (def (.), f <- (logBase 4), g <- heightQT, x <- (LeafQ a))
+    (logBase 4) (heightQT (LeafQ a))
+    =                                                                                                                            (def heightQT)
+    (logBase 4) 0
+    =                                                                                                             (def logBase, x <- 4, y <- 0)
+    1
+    
+dem caso ind.)
+Izd:
+    countLeavesQT . uncompress (NodeQ n1 n2 n3 n4)
+    =                                                                            (def (.), f <- countLeavesQT, g <- uncompress, x <- (LeafQ a))
+    countLeavesQT (uncompress (NodeQ n1 n2 n3 n4))
+    =                                                                                               (def uncompress, qT <- (NodeQ n1 n2 n3 n4))
+    countLeavesQT (uncompressN (heightQT (NodeQ n1 n2 n3 n4)) (NodeQ n1 n2 n3 n4))
+    =                                                                                                                            (def heightQT)
+    countLeavesQT (uncompressN (1 + max (max (heightQT n1) (heightQT n2)) (max (heightQT n3) (heightQT n4))) (NodeQ n1 n2 n3 n4))
+    =                                                                                                                            (def heightQT)
+Der:
+    (logBase 4) . heightQT (NodeQ n1 n2 n3 n4)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ii) prop: uncompress = subst render heightQT ?
+dem: por ppio de ext. para todo QT :: QuadTree a. uncompress QT = subst render heightQT QT ?
+sea qt :: QuadTree a. uncompress qt = subst render heightQT qt ? por induccion estructural sobre qt:
+caso base) uncompress (LeafQ a) = subst render heightQT (LeafQ a) ? 
+caso ind.) Hi.1) uncompress n1 = subst render heightQT n1 !
+           Hi.2) uncompress n2 = subst render heightQT n2 !
+           Hi.3) uncompress n3 = subst render heightQT n3 !
+           Hi.4) uncompress n4 = subst render heightQT n4 !
+           Te) uncompress (NodeQ n1 n2 n3 n4) = subst render heightQT (NodeQ n1 n2 n3 n4) ?
+lema 1) para todo qt :: QuadTree a. para todo n :: Int. uncompressN n qt = renderN n qt!
+
+caso base) 
+Izd:
+    uncompress (LeafQ a)
+    =                                                                                                        (def uncompress, qT <- (LeafQ a))
+    uncompressN (heightQT (LeafQ a)) (LeafQ a)
+    =                                                                                                                           (def heightQT)
+    uncompressN 0 (LeafQ a)
+    =                                                                                                                        (def uncompressN)
+    (LeafQ a)
+Der:
+    subst render heightQT (LeafQ a)
+    =                                                                                   (def subst, f <- render, g <- heightQT, x <- (LeafQ a))
+    render (LeafQ a) (heightQT (LeafQ a))
+    =                                                                                                                           (def heightQT)
+    render (LeafQ a) 0
+    =                                                                                                   (def render, image <- (LeafQ a), i <- 0)
+    renderN (logBase 4 0) (LeafQ a)
+    =                                                                                                                              (def logBase)
+    renderN 0 (LeafQ a)
+    =                                                                                                                   (def renderN, caso base)
+    (LeafQ a)
+    
+caso ind.)
+Izd:
+    uncompress (NodeQ n1 n2 n3 n4)
+    =                                                                                               (def uncompress, qT <- (NodeQ n1 n2 n3 n4))
+    uncompressN (heightQT (NodeQ n1 n2 n3 n4)) (NodeQ n1 n2 n3 n4)
+    =                                                                                                                              (por lema 1)
+    renderN (heightQT (NodeQ n1 n2 n3 n4)) (NodeQ n1 n2 n3 n4)
+    
+Der:
+    subst render heightQT (NodeQ n1 n2 n3 n4)
+    =                                                                         (def subst, f <- render, g <- heightQT, x <- (NodeQ n1 n2 n3 n4))
+    render (NodeQ n1 n2 n3 n4) (heightQT (NodeQ n1 n2 n3 n4))
+    =                                                             (def render, image <- (NodeQ n1 n2 n3 n4), i <- (heightQT (NodeQ n1 n2 n3 n4)))
+    renderN (logBase 4 (heightQT (NodeQ n1 n2 n3 n4))) (NodeQ n1 n2 n3 n4)
+    
