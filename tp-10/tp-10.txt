@@ -1,0 +1,6 @@
+data NExp = Var Variable
+| NCte Int
+| NBOp NBinOp NExp NExp
+data NBinOp = Add | Sub | Mul | Div | Mod | Pow
+type Variable = String
+

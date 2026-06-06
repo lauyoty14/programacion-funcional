@@ -1,0 +1,59 @@
+ejercicio 1)
+a) 
+cantidadCapasQueCumplen :: (Ingrediente -> Bool) -> Pizza -> Int
+cantidadCapasQueCumplen f Prepizza   = 0 
+cantidadCapasQueCumplen f (Capa i p) = if f i
+                                        then 1 + cantidadCapasQueCumplen f p
+                                        else cantidadCapasQueCumplen f p 
+b)
+conCapasTransformadas :: (Ingrediente -> Ingrediente) -> Pizza -> Pizza
+conCapasTransformadas f Prepizza   = Prepizza
+conCapasTransformadas f (Capa i p) = Capa (f i) (conCapasTransformadas f p)
+c)
+soloLasCapasQue :: (Ingrediente -> Bool) -> Pizza -> Pizza
+soloLasCapasQue f Prepizza   = Prepizza
+soloLasCapasQue f (Capa i p) = if f i
+                                then Capa i (soloLasCapasQue f p)
+                                else soloLasCapasQue f p 
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 2)
+a)
+sinLactosa :: Pizza -> Pizza
+sinLactosa = soloLasCapasQue (\i -> case i of
+                                     Queso -> False
+                                     _     -> True)
+b)
+aptaIntolerantesLactosa :: Pizza -> Bool
+aptaIntolerantesLactosa p = cantidadCapasQueCumplen (\i -> case i of
+                                                        Queso -> True
+                                                        _     -> False) p == 0 
+c)
+cantidadDeQueso :: Pizza -> Int
+cantidadDeQueso = cantidadCapasQueCumplen (\i -> case i of
+                                                    Queso -> True
+                                                    _     -> False)  
+d)
+conElDobleDeAceitunas :: Pizza -> Pizza
+conElDobleDeAceitunas = conCapasTransformadas (\i -> case i of
+                                                    Aceitunas n -> Aceitunas (n*2)
+                                                    _     -> i) 
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 3)
+pizzaProcesada :: (Ingrediente -> b -> b) -> b -> Pizza -> b
+pizzaProcesada f z Prepizza   = z
+pizzaProcesada f z (Capa i p) = f i (pizzaProcesada f z p)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 4)
+1a)
+cantidadCapasQueCumplen :: (Ingrediente -> Bool) -> Pizza -> Int
+cantidadCapasQueCumplen f= pizzaProcesada (\i r -> if f i
+                                                      then 1 + r
+                                                      else r) 0
+1b)
+conCapasTransformadas :: (Ingrediente -> Ingrediente) -> Pizza -> Pizza
+conCapasTransformadas f = pizzaProcesada (\i r -> Capa (f i) r) Prepizza
+1c)
+soloLasCapasQue :: (Ingrediente -> Bool) -> Pizza -> Pizza
+soloLasCapasQue f = pizzaProcesada (\i r -> if f i
+                                               then Capa i r
+                                               else r) Prepizza
