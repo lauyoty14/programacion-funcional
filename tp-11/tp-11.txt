@@ -57,3 +57,582 @@ soloLasCapasQue :: (Ingrediente -> Bool) -> Pizza -> Pizza
 soloLasCapasQue f = pizzaProcesada (\i r -> if f i
                                                then Capa i r
                                                else r) Prepizza
+2a)
+sinLactosa :: Pizza -> Pizza
+sinLactosa = pizzaProcesada (\i r-> case i of
+                                        Queso -> r
+                                        _     -> Capa i r) Prepizza
+2b)
+aptaIntolerantesLactosa :: Pizza -> Bool
+aptaIntolerantesLactosa = pizzaProcesada (\i r-> case i of
+                                                    Queso -> False
+                                                    _     -> r) True
+2c)
+cantidadDeQueso :: Pizza -> Int
+cantidadDeQueso = pizzaProcesada (\i r-> case i of
+                                            Queso -> 1 + r
+                                            _     -> r) 0
+2d)
+conElDobleDeAceitunas :: Pizza -> Pizza
+conElDobleDeAceitunas = pizzaProcesada (\i r-> case i of
+                                            Aceitunas n -> Capa (Aceitunas (n*2)) r
+                                            _     -> Capa i r) Prepizza
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 5)
+a)
+cantidadAceitunas :: Pizza -> Int
+cantidadAceitunas = pizzaProcesada (\i r-> case i of
+                                            Aceitunas n -> n + r
+                                            _     -> r) 0
+b)
+capasQueCumplen :: (Ingrediente -> Bool) -> Pizza -> [Ingrediente]
+capasQueCumplen f = pizzaProcesada (\i r-> if f i
+                                            then i : r
+                                            else r) []
+c)
+conDescripcionMejorada :: Pizza -> Pizza
+conDescripcionMejorada = pizzaProcesada (\i r -> case i of
+                                            Aceitunas n -> 
+                                                case r of 
+                                                    Capa (Aceitunas m) p -> Capa (Aceitunas (n + m)) p
+                                                    _                    -> Capa i r
+                                            _ -> Capa i r) Prepizza
+d)
+conCapasDe :: Pizza -> Pizza -> Pizza
+conCapasDe  = pizzaProcesada (\i r-> (\p -> Capa i (r p))) (\p-> p)
+e)
+primerasNCapas :: Int -> Pizza -> Pizza
+primerasNCapas n p = pizzaProcesada 
+                        (\i r -> (\n -> if n > 0 
+                                         then Capa i (r (n - 1)) 
+                                         else Prepizza)) 
+                        (\n -> Prepizza) p n                
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 6)
+a) prop: para todo f. length . soloLasCapasQue f = cantidadCapasQueCumplen f ?
+dem: por ppio de ext. para todo p :: Pizza. length . soloLasCapasQue f p = cantidadCapasQueCumplen f p ?
+sea p :: Pizza. Qvq length . soloLasCapasQue f p = cantidadCapasQueCumplen f p ? por induccion estructural sobre p:
+caso base) length . soloLasCapasQue f Prepizza = cantidadCapasQueCumplen f Prepizza ?
+caso ind.) Hi) length . soloLasCapasQue f p = cantidadCapasQueCumplen f p !
+           Te) length . soloLasCapasQue f (Capa i p) = cantidadCapasQueCumplen f (Capa i p) ?
+
+dem caso base)
+Izd: 
+    length . soloLasCapasQue f Prepizza
+    =                                                                           (def (.), f <- length, g <- soloLasCapasQue, x <- (f Prepizza))
+    length (soloLasCapasQue f Prepizza)
+    =                                                                                                         (def soloLasCapasQue, caso base)
+    length (Prepizza)
+    =                                                                                                                  (def length, caso base)
+    0
+Der:
+    cantidadCapasQueCumplen f Prepizza
+    =                                                                                                 (def cantidadCapasQueCumplen, caso base)
+    0
+
+dem caso ind.)
+Izd:
+    length . soloLasCapasQue f (Capa i p)
+    =                                                                           (def (.), f <- length, g <- soloLasCapasQue, x <- (f Prepizza))
+    length (soloLasCapasQue f (Capa i p))
+    =                                                                                            (def soloLasCapasQue, f <- f, p <- (Capa i p))
+    length (if f i
+                then Capa i (soloLasCapasQue f p)
+                else soloLasCapasQue f p)
+        caso f i = True)
+            length (Capa i (soloLasCapasQue f p))
+            =                                                                                                                     (def length)
+            1 + length (soloLasCapasQue f p)
+            =                                                                                                                  (por hipotesis)
+            1 + cantidadCapasQueCumplen f p
+        caso f i = False)
+            length (soloLasCapasQue f p)
+            =                                                                                                                  (por hipotesis)
+            cantidadCapasQueCumplen f p
+Der:
+    cantidadCapasQueCumplen f (Capa i p)
+    =                                                                                   (def cantidadCapasQueCumplen, f <- f, p <- (Capa i p))
+    if f i
+        then 1 + cantidadCapasQueCumplen f p
+        else cantidadCapasQueCumplen f p
+        caso f i = True)
+            1 + cantidadCapasQueCumplen f p
+        caso f i = False)
+            cantidadCapasQueCumplen f p
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b) prop: para todo f. para todo p1. para todo p2. cantidadCapasQueCumplen f (conCapasDe p1 p2) = 
+        cantidadCapasQueCumplen f p1 + cantidadCapasQueCumplen f p2 ?
+dem: sea f :: (Ingrediente -> Bool), p1 :: Pizza, p2 :: Pizza. 
+        cantidadCapasQueCumplen f (conCapasDe p1 p2) = cantidadCapasQueCumplen f p1 + cantidadCapasQueCumplen f p2 ?
+por induccion estructural sobre p1: 
+caso base) cantidadCapasQueCumplen f (conCapasDe Prepizza p2) = cantidadCapasQueCumplen f Prepizza + cantidadCapasQueCumplen f p2 ?
+caso ind.) Hi) cantidadCapasQueCumplen f (conCapasDe p p2) = cantidadCapasQueCumplen f p + cantidadCapasQueCumplen f p2 !
+           Te) cantidadCapasQueCumplen f (conCapasDe (Capa i p) p2) = cantidadCapasQueCumplen f (Capa i p) + cantidadCapasQueCumplen f p2 ?
+
+dem caso base)
+Izd: 
+    cantidadCapasQueCumplen f (conCapasDe Prepizza p2) 
+    =                                                                                                               (def conCapasDe, caso base)
+    cantidadCapasQueCumplen f p2
+Der:
+    cantidadCapasQueCumplen f Prepizza + cantidadCapasQueCumplen f p2
+    =                                                                                                  (def cantidadCapasQueCumplen, caso base)
+    0 + cantidadCapasQueCumplen f p2
+    =                                                                                                                          (por aritmetica)
+    cantidadCapasQueCumplen f p2
+
+dem caso ind.)
+Izd:
+    cantidadCapasQueCumplen f (conCapasDe (Capa i p) p2)
+    =                                                                                              (def conCapasDe, p <- (Capa i p), p2 <- p2)
+    cantidadCapasQueCumplen f (Capa i (conCapasDe p p2))
+    =                                                                                    (def cantidadCapasQueCumplen, p <- (conCapasDe p p2))
+    if f i 
+        then 1 + cantidadCapasQueCumplen f (conCapasDe p p2) 
+        else cantidadCapasQueCumplen f (conCapasDe p p2)
+
+        caso f i = True)
+        1 + cantidadCapasQueCumplen f (conCapasDe p p2)
+        =                                                                                                                      (por hipotesis)
+        1 + cantidadCapasQueCumplen f p + cantidadCapasQueCumplen f p2
+
+        caso f i = False)
+        cantidadCapasQueCumplen f (conCapasDe p p2)
+        =                                                                                                                      (por hipotesis)
+        cantidadCapasQueCumplen f p + cantidadCapasQueCumplen f p2
+Der:
+    cantidadCapasQueCumplen f (Capa i p) + cantidadCapasQueCumplen f p2
+    =                                                                                                            (def cantidadCapasQueCumplen)
+    (if f i
+        then 1 + cantidadCapasQueCumplen f p 
+        else cantidadCapasQueCumplen f p) + cantidadCapasQueCumplen f p2
+        
+        caso f i = True)
+            1 + cantidadCapasQueCumplen f p + cantidadCapasQueCumplen f p2
+
+        caso f i = False)
+            cantidadCapasQueCumplen f p + cantidadCapasQueCumplen f p2
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 7)
+a)
+map :: (a -> b) -> [a] -> [b]
+map f []     =  []
+map f (x:xs) = f x : (map f xs)
+b)
+filter :: (a -> Bool) -> [a] -> [a]
+filter f []     = []
+filter f (x:xs) = if f x
+                    then x : (filter f xs)
+                    else filter xs
+c)
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr f z []     = z
+foldr f z (x:xs) = f x (foldr f z xs)
+d)
+recr :: b -> (a -> [a] -> b -> b) -> [a] -> b
+recr z f []     = z
+recr z f (x:xs) = f x xs (recr z f xs)
+e) 
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldr1 f [x] = x
+foldr1 f (x:xs) = f x (foldr1 f xs)  
+f)
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+zipWith f [] _ = []
+zipWith f _ [] = []
+zipWith f (x:xs) (y:ys) = f x y : (zipWith f xs ys)
+g)
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+scanr f z []     = [z]
+scanr f z (x:xs) = let (r:rs) = scanr f z xs
+                   in (f x r) : r : rs 
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 8)
+a) prop: map id = id ?
+dem: por ppio de ext. para todo xs :: [a]. map id xs = id xs ? sea xs :: [a]. map id xs = id xs ? 
+por induccion estructural sobre xs:
+caso base) map id [] = id [] ?
+caso ind.) Hi) map id xs = id xs !
+           Te) map id (x:xs) = id (x:xs) ?
+
+dem caso base)
+Izd:
+    map id []
+    =                                                                                                            (def map, f <- id, caso base)
+    []
+Der:
+    id []
+    =                                                                                                                                 (def id)
+    []
+
+dem caso ind.)
+Izd:
+    map id (x:xs)
+    =                                                                                                                        (def map, f <- id)
+    (id x) : (map xs)
+    =                                                                                                                                  (def id)
+    x : (map id xs)
+    =                                                                                                                           (por hipotesis)
+    x : id xs
+    =                                                                                                                                  (def id)
+    x : xs
+Der:
+    id (x:xs)
+    =                                                                                                                                 (def id)
+    (x:xs)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b) prop: para todo f. para todo g. map f . map g = map (f . g) ? 
+dem: por ppio de ext. para todo f. para todo g. para todo xs. map f . map g xs = map (f . g) xs ?
+sea f :: (a -> b). g :: (b -> c) y xs :: [a]. map f . map g xs = map (f . g) xs ?
+por induccion estructural sobre xs: 
+caso base) map f . map g [] = map (f . g) [] ?
+caso ind.) Hi) map f . map g xs = map (f . g) xs ?
+           Te) map f . map g (x:xs) = map (f . g) (x:xs) ?
+
+dem caso base)
+Izd:
+    map f . map g []
+    =                                                                                               (def (.), f <- map f, g <- map g, x <- [])
+    map f (map g [])
+    =                                                                                                                     (def map, caso base)
+    map f []
+    =                                                                                                                     (def map, caso base)
+    []
+Der:
+    map (f . g) []
+    =                                                                                                       (def map, f <- (f . g), caso base)
+    []
+
+dem caso ind.)
+Izd:
+    map f . map g (x:xs)
+    =                                                                                            (def (.), f <- map f, g <- map g, x <- (x:xs))
+    map f (map g (x:xs))
+    =                                                                                                                         (def map, f <- g)
+    map f ((g x) : (map g xs))
+    =                                                                                             (def map, f <- f, x <- (g x), xs <- (map g xs))
+    f (g x) : (map f (map g xs))
+    =                                                                                                                           (por hipotesis)
+    f (g x) : map (f . g) xs
+Der:
+    map (f . g) (x:xs)
+    =                                                                                                                   (def map, f <- (f . g))
+    (f . g) x : (map (f . g) xs)
+    =                                                                                                                                 (def (.))
+    f (g x) : (map (f . g) xs)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+c) prop: para todo f. para todo xs. para todo ys. map f (xs ++ ys) = map f xs ++ map f ys ?
+dem: sea f :: (a -> b). xs :: [a]. ys :: [a]. map f (xs ++ ys) = map f xs ++ map f ys. por induccion estructural sobre xs:
+caso base) map f ([] ++ ys) = map f [] ++ map f ys
+caso ind.) Hi) map f (xs ++ ys) = map f xs ++ map f ys
+           Te) map f ((x:xs) ++ ys) = map f (x:xs) ++ map f ys
+
+dem caso base)
+Izd:
+    map f ([] ++ ys)
+    =                                                                                                                    (def (++), caso base)
+    map f ys
+Der:
+    map f [] ++ map f ys
+    =                                                                                                                     (def map, caso base)
+    [] ++ map f ys
+    =                                                                                                                    (def (++), caso base)
+    map f ys
+
+dem caso ind.)
+Izd:
+    map f ((x:xs) ++ ys)
+    =                                                                                                                                 (def ++)
+    map f (x : (xs ++ ys))
+    =                                                                                                              (def map, xs <- (xs ++ ys))
+    f x : (map f (xs ++ ys))
+    =                                                                                                                          (por hipotesis)
+    f x : (map f xs ++ map f ys)
+Der:
+    map f (x:xs) ++ map f ys
+    =                                                                                                                                (def map)
+    (f x : (map f xs)) ++ map f ys
+    =                                                                                                             (def (++), xs <- (map f xs))
+    f x : (map f xs ++ map f ys)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+d) prop: para todo f. concat . map (map f) = map f . concat ?
+dem: por ppio de ext. para todo f. para todo xs. concat . map (map f) xs = map f . concat xs ?
+sea f :: (a -> b). xs :: [[a]]. concat . map (map f) xs = map f . concat xs ? por induccion estructural sobre xs:
+caso base) concat . map (map f) [] = map f . concat [] ?
+caso ind.) Hi) concat . map (map f) xss = map f . concat xss !
+           Te) concat . map (map f) (xs:xss) = map f . concat (xs:xss) ?
+
+dem caso base)
+Izd:
+    concat . map (map f) [] 
+    =                                                                                        (def (.), f <- concat, g <- map (map f), x <- [])
+    concat (map (map f) []) 
+    =                                                                                                                     (def map, caso base)
+    concat []
+    =                                                                                                                  (def concat, caso base)
+    []
+Der:
+    map f . concat []
+    =                                                                                              (def (.), f <- map f, g <- concat, x <- [])
+    map f (concat [])
+    =                                                                                                                  (def concat, caso base)
+    map f []
+    =                                                                                                                     (def map, caso base)
+    []
+
+dem caso ind.)
+Izd:
+    concat . map (map f) (xs:xss)
+    =                                                                                     (def (.), f <- concat, g <- map (map f), x <- (xs:xss))
+    concat (map (map f) (xs:xss))
+    =                                                                                                                  (def map, f <- (map f))    
+    concat ((map f) xs : (map (map f) xss))
+    =                                                                                   (def concat, xs <- (map f) x, xss <- (map (map f) xss)) 
+    (map f) xs ++ concat (map (map f xss))
+    =                                                                                                                          (por hipotesis)
+    (map f) xs ++ (map f . concat xss)
+    =                                                                                              (def (.), f <- map f, g <- concat, x <- xss)
+    (map f) xs ++ (map f (concat xss))
+Der:
+    map f . concat (xs:xss)
+    =                                                                                        (def (.), f <- map f, g <- concat, x <- (xx:xss))
+    map f (concat (xs:xss))
+    =                                                                                                                             (def concat)
+    map f (xs ++ concat xss)
+    =                                                                                                                   (por prop del punto c)
+    map f xs ++ map f (concat xss)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+e) prop: foldr ((+) . suma') 0 = sum . map suma' ?
+dem: por ppio de ext. para todo xs. foldr ((+) . suma') 0 xs = sum . map suma' xs ? 
+sea xs :: [a]. foldr ((+) . suma') 0 xs = sum . map suma' xs ? por induccion estructural sobre xs:
+caso base) foldr ((+) . suma') 0 [] = sum . map suma' []
+caso ind.) Hi) foldr ((+) . suma') 0 xs = sum . map suma' xs
+           Te) foldr ((+) . suma') 0 (x:xs) = sum . map suma' (x:xs)
+
+dem caso base)
+Izd:
+    foldr ((+) . suma') 0 []
+    =                                                                                                           (def foldr, z <- 0, caso base)
+    0
+Der:
+    sum . map suma' []
+    =                                                                                             (def (.), f <- sum, g <- map suma', x <- [])
+    sum (map suma' [])
+    =                                                                                                                     (def map, caso base)
+    sum []
+    =                                                                                                                     (def sum, caso base)
+    0
+
+dem caso ind.)
+Izd:
+    foldr ((+) . suma') 0 (x:xs)
+    =                                                                                                   (def foldr, f <- ((+) . suma'), z <- 0)
+    ((+) . suma') x (foldr ((+) . suma') 0 xs)
+    =                                                                                                                           (por hipotesis)
+    ((+) . suma') x (sum . map suma' xs)
+    =                                                                                                  (def (.), f <- (+), g <- suma', x <- x)
+    ((+) (suma' x)) (sum . map suma' xs)
+    =                                                                                       (def (+), x <- (suma' x), y <- (sum . map suma' xs))
+    suma' x + (sum . map suma' xs)
+    =                                                                                              (def (.), f <- sum. g <- map suma', x <- xs)
+    suma' x + (sum (map suma' xs))
+Der:
+    sum . map suma' (x:xs)
+    =                                                                                          (def (.), f <- sum, g <- map suma', x <- (x:xs))
+    sum (map suma' (x:xs))
+    =                                                                                                                     (def map, f <- suma')
+    sum (suma' x : (map suma' xs))
+    =                                                                                                                     (def sum, f <- suma')
+    suma' x + (sum (map suma' xs))
+-----------------------------------------------------------------------------------------------------------------------------------------------
+g) prop: para todo f. para todo z. para todo xs. para todo ys. foldr f z (xs ++ ys) = foldr f (foldr f z ys) xs ?
+dem: sea f :: (a -> a -> b). z :: b. xs :: [a]. ys :: [a]. foldr f z (xs ++ ys) = foldr f (foldr f z ys) xs ? por induccion estructural sobre xs:
+caso base) foldr f z ([] ++ ys) = foldr f (foldr f z ys) [] ?
+caso ind.) Hi) foldr f z (xs ++ ys) = foldr f (foldr f z ys) xs !
+           Te) foldr f z ((x:xs) ++ ys) = foldr f (foldr f z ys) (x:xs) ?
+
+dem caso base)
+Izd:
+    foldr f z ([] ++ ys)
+    =                                                                                                                    (def (++), caso base)
+    foldr f z ys
+Der:
+    foldr f (foldr f z ys) []
+    =                                                                                                                    (def foldr, caso base)
+    foldr f z ys
+
+dem caso ind.)
+Izd:
+    foldr f z ((x:xs) ++ ys)
+    =                                                                                                                               (def (++))
+    foldr f z (x : (xs ++ ys))
+    =                                                                                                            (def foldr, xs <- (xs ++ ys))
+    f x (foldr f z (xs ++ ys))
+    =                                                                                                                          (por hipotesis)
+    f x (foldr f (foldr f z ys) xs)
+Der:
+    foldr f (foldr f z ys) (x:xs)
+    =                                                                                                        (def foldr, z <- (foldr f z ys))
+    f x (foldr f (foldr f z ys) xs)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 9)
+a)
+sum :: [Int] -> Int
+sum = foldr (\x r -> x + r) 0
+b)
+length :: [a] -> Int
+length = foldr (const (+1)) 0
+c)
+map :: (a -> b) -> [a] -> [b]
+map f = foldr ((:) . f) [] 
+d)
+filter :: (a -> Bool) -> [a] -> [a]
+filter f = foldr (\x r -> if f x
+                            then x : r
+                            else r) []
+e)
+find :: (a -> Bool) -> [a] -> Maybe a
+find f = foldr (\x r -> if f x
+                            then Just x
+                            else r) Nothing
+f)
+any :: (a -> Bool) -> [a] -> Bool
+any f = foldr ((||) . f) False 
+g)
+all :: (a -> Bool) -> [a] -> Bool
+all f = foldr ((&&) . f) True
+h)
+countBy :: (a -> Bool) -> [a] -> Int
+countBy f = foldr (\x r -> if f x 
+                            then 1 + r
+                            else r) 0
+i)
+partition :: (a -> Bool) -> [a] -> ([a], [a])
+partition f = foldr (\x (xs, ys) -> if f x
+                                        then (x:xs, ys)
+                                        else (xs , x:ys)) ([], [])
+j)
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+zipWith f = foldr (\x r ys -> case ys of
+                                []     -> []
+                                (z:zs) -> f x z : r zs
+                  ) (const [])
+k)
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+scanr f z = foldr (\x rs -> f x (head rs) : rs) [z] 
+l)
+takeWhile :: (a -> Bool) -> [a] -> [a]
+takeWhile f = foldr (\x r -> if f x
+                                then x : r
+                                else []) []
+m)
+take :: Int -> [a] -> [a]
+take = flip (foldr (\x r k -> if k > 0 
+                                then x : r (k-1) 
+                                else []) (const []))
+n) 
+drop :: Int -> [a] -> [a]
+drop = flip (foldr (\x r k -> if k > 0
+                                then r (k - 1)
+                                else x : r k) (const []))
+o)
+elemAt :: Int -> [a] -> a
+elemAt = flip (foldr (\x r k -> if k > 0
+                                    then r (k - 1)
+                                    else x)) (error "indice mayor al tamaño de la lista")
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 10)
+a) 
+filter :: (bool-> bool) -> [bool] -> [bool]
+id     :: (bool -> bool)
+----------------------------------------------------
+filter id :: [bool] -> [bool] 
+
+(a -> bool) = (b -> b)
+b = bool
+a = b = bool
+-----------------------------------------------------------------------------------------------------------------------------------------------
+b)
+map                   :: (a -> b) -> [a] -> [b]
+(\x y z -> (x, y, z)) :: c -> d -> e -> (c, d, e)
+map (\x y z -> (x, y, z)) :: [a] -> [b -> c -> (a, b , c)]
+
+(a -> b) = c -> (d -> e -> (c , d , e))
+a = c
+b = d -> e -> (c, d , e)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+c)
+map     :: (a -> b) -> [a] -> [b]
+(+)     :: (Int -> Int -> Int)
+----------------------------------
+map (+) :: [Int] -> [Int ->Int]
+
+a = Int
+b = Int -> Int
+-----------------------------------------------------------------------------------------------------------------------------------------------
+d)
+filter :: (a -> Bool) -> [a] -> [a]
+fst    :: (c,b) -> c
+-----------------------------------
+filter fst :: [(Bool, a)] -> [(Bool, a)]
+
+(c,b) -> c = (a -> Bool)
+a = (c, b)
+c = Bool
+a = (Bool, b)
+-----------------------------------------------------------------------------------------------------------------------------------------------
+e)
+filter           :: (a -> Bool) -> [a] -> [a]       a = x, x = Bool => a = Bool       
+(flip const (+)) :: x -> x
+--------------------------------------------------
+filter (flip const (+)) :: [Bool] -> [Bool]
+
+flip const :: b -> a -> a                       b = Int -> Int -> Int
+(+)        :: Int -> Int -> Int
+--------------------------------------
+flip const (+) :: a -> a
+
+flip  :: (a -> b -> c) -> b -> a -> c           a = d, b = e, d = c => a = c = d
+const :: d -> e -> d
+--------------------------------------
+flip const :: b -> a -> a
+-----------------------------------------------------------------------------------------------------------------------------------------------
+f)
+map   :: (a -> b) -> [a] -> [b]         a = c, b = d -> c 
+const :: c -> d -> c
+-----------------------------------
+map const :: [a] -> [b -> a]
+-----------------------------------------------------------------------------------------------------------------------------------------------
+g)
+map   :: (a -> b) -> [a] -> [b]         a = c -> c , b = c -> c
+twice :: (c -> c) -> (c -> c)
+----------------------------------
+map twice :: [(a -> a)] -> [(a -> a)]
+-----------------------------------------------------------------------------------------------------------------------------------------------
+h)
+foldr :: (a -> b -> b) -> b -> [a] -> b        a <- (c -> c) , b <- c
+twice :: (c -> c) -> (c -> c)
+------------------------------------------
+foldr twice :: c -> [c -> c] -> c
+-----------------------------------------------------------------------------------------------------------------------------------------------
+i) 
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]           a = (d, e) , b -> c = d 
+fst     :: (d, e) -> d
+-----------------------------------------------
+zipWith fst :: [(a -> b, c)] -> [a] -> [c]
+-----------------------------------------------------------------------------------------------------------------------------------------------
+j)
+foldr (\x r z -> (x, z) : r z) :: z -> [(x , z)] -> [x] -> z -> [(x , z)]       b = z , [a] = [(x, z)]
+(const [])                     :: b -> [a]
+--------------------------------------------------------------------------------
+foldr (\x r z -> (x, z) : r z) (const []) :: [a] -> b -> [(a , b)] 
+
+const :: a -> b -> a
+[]    :: [x]
+------------------------
+const [] :: b -> [a]
+
+foldr                    :: (a -> b -> b) -> b -> [a] -> b              a = x, b = z -> [(x , z)] 
+(\x r z -> (x, z) : r z) :: x -> (z -> [(x , z)]) -> z -> [(x , z)]
+---------------------------------------------------------------------------------
+foldr (\x r z -> (x, z) : r z) :: z -> [(x , z)] -> [x] -> z -> [(x , z)]
