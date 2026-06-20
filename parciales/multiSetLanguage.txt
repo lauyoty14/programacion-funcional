@@ -1,0 +1,229 @@
+ejercicio 1)
+a) 
+occursMSE :: a -> MSExp a -> Int
+occursMSE a msExp = occursMESWith a id msExp 
+
+occursMESWith :: a -> (a->a) -> MSExp a -> Int
+occursMESWith a f (EmptyMS)         = 0
+occursMESWith a f (AddMS b ms)      = if a == (f b) 
+                                        then 1 + occursMESWith a f ms
+                                        else occursMESWith a f ms
+occursMESWith a f (UnionMS ms1 ms2) = occursMESWith a f ms1 + occursMESWith a f ms2
+occursMESWith a f (RemoveMS b ms)   = if a == (f b)
+                                        then max 0 (occursMESWith a f ms - 1)
+                                        else occursMESWith a f ms
+occursMESWith a f (MapMS g ms)      = occursMESWith a (f . g) ms
+b)
+filterMSE :: (a -> Bool) -> MSExp a -> MSExp a
+filterMSE f msExp = filterMSEif f msExp
+
+filterMSEif :: (a -> Bool) -> MSExp a -> MSExp a
+filterMSEif f (EmptyMS)         = EmptyMS
+filterMSEif f (AddMS x ms)      = if f x
+                                    then AddMS x (filterMSEif f ms)
+                                    else filterMSEif f ms
+filterMSEif f (UnionMS ms1 ms2) = UnionMS (filterMSEif f ms1) (filterMSEif f ms2)
+filterMSEif f (RemoveMS x ms)   = if f x
+                                    then RemoveMS x (filterMSEif f ms)
+                                    else filterMSEif f ms
+filterMSEif f (MapMS g ms)      = MapMS g (filterMSEif (f . g) ms)
+c)
+isValidMSE :: MSExp a -> Bool
+isValidMSE msExp = validateMSE msExp
+
+validateMSE :: MSExp a -> Bool
+validateMSE (EmptyMS)         = True
+validateMSE (AddMS x ms)      = validateMSE ms 
+validateMSE (UnionMS ms1 ms2) = validateMSE ms1 && validateMSE ms2
+validateMSE (RemoveMS x ms)   = occursMSE x ms >  0 && validateMSE ms
+validateMSE (MapMS g ms)      = validateMSE ms
+d)
+evalMSE :: Eq a => MSExp a -> [a]
+evalMSE EmptyMS         = []
+evalMSE (AddMS x e)     = x : evalMSE e
+evalMSE (RemoveMS x e)  = listWithout x (evalMSE e)
+evalMSE (UnionMS e1 e2) = evalMSE e1 ++ evalMSE e2
+evalMSE (MapMS f e)     = map f (evalMSE e)
+
+listWithout :: Eq a => a -> [a] -> [a]
+listWithout x [] = error "no se puede sacar"
+listWithout x (y:ys) = if x == y then ys else y : listWithout x ys
+
+e)
+simpMSE :: MSExp a -> MSExp a
+simpMSE EmptyMSE        = EmptyMSE
+simpMSE (AddMS x e)     = AddMS x (simpMSE e)
+simpMSE (RemoveMS x e)  = simpRemoveMS x (simpMSE e)
+simpMSE (UnionMS e1 e2) = simpUnionMS (simpMSE e1) (simpMSE e2)
+simpMSE (MapMS f e)     = simpMapMS f (simpMSE e)
+
+simpRemoveMS Eq a => a -> MSExp a -> MSExp a
+simpRemoveMS x (AddMS y e) = if x==y
+                                then e
+                                else RemoveMS x (AddMS y e)
+simpRemoveMS x e           = RemoveMS x e
+
+simpUnionMS :: MSExp a -> MSExp a -> MSExp a
+simpUnionMS EmptyMS e2 = e2
+simpUnionMS e1 EmptyMS = e1
+simpUnionMS e1      e2 = UnionMS e1 e2
+
+simpMapMS :: (a -> a) -> MSExp a -> MSExp a
+simpMapMS f EmptyMS = EmptyMS
+simpMapMS f e       = MapMS f e
+
+ejercicio 2)
+prop: evalMSE . simpMSE = evalMSE ?
+dem: por ppio de ext. para todo MsExp. evalMSE . simpMSE MsExp = evalMS MsExp ?
+sea mseExp :: MSExp a. evalMSE . simpMSE mseExp = evalMS mseExp ? 
+por induccion estructural sobre mseExp :
+caso base) evalMSE . simpMSE EmptyMSE = evalMS EmptyMSE ?
+caso ind.1) 
+        Hi) evalMSE . simpMSE ms = evalMS ms !
+        Te) evalMSE . simpMSE (AddMS a ms) = evalMS (AddMS a ms)?
+caso ind.2) 
+        Hi.1) evalMSE . simpMSE ms1 = evalMSE ms1 !
+        Hi.2) evalMSE . simpMSE ms2 = evalMSE ms2 !
+        Te) evalMSE . simpMSE (UnionMS ms1 ms2) = evalMSE (UnionsMS ms1 ms2) ?
+caso ind.3) 
+        Hi) evalMSE . simpMSE ms = evalMSE ms !
+        Te) evalMSE . simpMSE (RemoveMS a ms) = evalMSE (RemoveMS a ms) ?
+caso ind.4)
+        Hi) evalMSE . simpMSE ms = evalMSE ms !
+        Te) evalMSE . simpMSE (MapMS f ms) = evalMSE (MapMS f ms) ?
+
+dem caso base)
+Izd)
+    evalMSE . simpMSE EmptyMSE
+    =                                                        (def (.), f <- evalMSE, g <- simpMSE, x <- EmptyMSE)
+    evalMSE (simpMSE EmptyMSE)
+    =                                                                                    (def simpMSE, caso base)
+    evalMSE EmptyMSE
+    =                                                                                    (def evalMSE, caso base)
+    []
+Der)
+    evalMSE EmptyMSE
+    =                                                                                    (def evalMSE, caso base)
+    []
+
+dem caso ind.1)
+Izd)
+    evalMSE . simpMSE (AddMS a ms)
+    =                                                        (def (.), f <- evalMSE, g <- simpMSE, x <- (AddMS a ms))
+    evalMSE (simpMSE (AddMS a ms))
+    =                                                                                  (def simpMSE, e <- ms, x <- a)
+    evalMSE (AddMS a (simpMSE ms))
+    =                                                                                 (def evalMSE, e <- (simpMSE e))
+    a : (evalMSE (simpMSE ms))
+    =                                                                                                 (por hipotesis)
+    a : evalMSE ms
+Der)
+    evalMS (AddMS a ms)
+    =                                                                                 (def evalMSE, e <- ms, x <- a)
+    a : evalMS ms
+
+dem caso ind.2)
+Izd)
+    evalMSE . simpMSE (UnionMS ms1 ms2)
+    =                                                                    (def (.), f <- evalMSE, g <- simpMSE, x <- (UnionMS ms1 ms2))
+    evalMSE (simpMSE (UnionMS ms1 ms2))
+    =                                                                                              (def simpMSE, e1 <- ms1, e2 <- ms2)
+    evalMSE (simpUnionMS (simpMSE ms1) (simpMSE ms2))
+    =                                                                     (def simpUnionMS, e1 <- (simpMSE ms1), e2 <- (simpMSE ms2))
+    evalMSE (UnionMS (simpMSE ms1) (simpMSE ms2))
+    =                                                                         (def evalMSE, e1 <- (simpMSE ms1), e2 <- (simpMSE ms2))
+    evalMSE (simpMSE ms1) ++ evalMSE (simpMSE ms2)
+    =                                                                                                           (por hipotesis 1 y 2)
+    evalMSE ms1 ++ evalMSE ms2
+Der)
+    evalMSE (UnionsMS ms1 ms2)
+    =                                                                         (def evalMSE, e1 <- ms1, e2 <- simpMSE ms2)
+    evalMSE ms1 ++ evalMSE ms2
+
+dem caso ind.3)
+Izd)
+    evalMSE . simpMSE (RemoveMS a ms)
+    =                                                                    (def (.), f <- evalMSE, g <- simpMSE, x <- (RemoveMS a ms))
+    evalMSE (simpMSE (RemoveMS a ms))
+    =                                                                                                   (def simpMSE, x <- a, e <- ms)
+    evalMSE (simpRemoveMS a (simpMSE ms))
+    =                                                                                    (def simpRemoveMS, x <- a, e <- (simpMSE ms))
+    evalMSE (RemoveMS a (simpMSE ms))
+    =                                                                                         (def evalMSE, x <- a, e <- (simpMSE ms))
+    listWithout a (evalMSE (simpMSE ms))
+    =                                                                                                                  (por hipotesis)
+    listWithout a (evalMSE ms)
+Der)
+    evalMSE (RemoveMS a ms)
+    =                                                                                                   (def evalMSE, x <- a, e <- ms)
+    listWithout a (evalMSE ms)
+
+caso ind.4)
+Izd)
+    evalMSE . simpMSE (MapMS f ms)
+    =                                                                         (def (.), f <- evalMSE, g <- simpMSE, x <- (MapMS f ms))
+    evalMSE (simpMSE (MapMS f ms))
+    =                                                                                                           (def simpMSE, e <- ms)
+    evalMSE (simpMapMS f (simpMSE ms))
+    =                                                                                               (def simpMapMS, e <- (simpMSE ms))
+    evalMSE (MapsMS f (simpMSE ms))
+    =                                                                                                 (def evalMSE, e <- (simpMSE ms))
+    map f (evalMSE (simpMSE ms))
+    =                                                                                                                   (por hipotesis)
+    map f (evalMSE ms)
+Der)
+    evalMSE (MapMS f ms)
+    =                                                                                                           (def evalMSE, e <- ms)
+    map f (evalMSE ms)
+
+Queda demostrada la propiedad.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 3)
+foldMSE :: b -> (a -> b -> b) -> (b -> b -> b) -> (a -> b -> b) -> ((a -> a) -> b -> b) -> MSExp a -> b
+foldMSE em _ _ _ _ EmptyMS                    = em 
+foldMSE em add union rem ma (AddMS a ms)      = add a (foldMSE em add union rem ma ms)
+foldMSE em add union rem ma (UnionMS ms1 ms2) = union (foldMSE em add union rem ma ms1) 
+                                                      (foldMSE em add union rem ma ms2)
+foldMSE em add union rem ma (RemoveMS a ms)   = rem a (foldMSE em add union rem ma ms)
+foldMSE em add union rem ma (MapMS f ms)      = ma f (foldMSE em add union rem ma ms)
+
+recMSE :: b -> (a -> MSExp a -> b -> b) -> (MSExp a -> b -> MSExp a -> b -> b) -> 
+    (a -> MSExp a -> b -> b) -> ((a -> a) ->  MSExp a -> b -> b) -> MSExp a -> b
+recMSE em _ _ _ _ EmptyMS                    = em 
+recMSE em add union rem ma (AddMS a ms)      = add a ms (recMSE em add union rem ma ms)
+recMSE em add union rem ma (UnionMS ms1 ms2) = union ms1 (recMSE em add union rem ma ms1) 
+                                                     ms2 (recMSE em add union rem ma ms2)
+recMSE em add union rem ma (RemoveMS a ms)   = rem a ms (recMSE em add union rem ma ms)
+recMSE em add union rem ma (MapMS f ms)      = ma f ms (recMSE em add union rem ma ms)
+
+  
+ejercicio 4)
+a)
+occursMSE :: a -> MSExp a -> Int
+occursMSE a msExp = foldMSE (const 0) 
+                      (\b or f -> if a == (f b) then 1 + or f else or f)
+                      (\or1 or2 f -> or1 f + or2 f)
+                      (\b or f -> if a == (f b) then max 0 (or f - 1) else or f) 
+                      (\g orG f -> orG (f . g)) msExp id
+b)
+filterMSE :: (a -> Bool) -> MSExp a -> MSExp a
+filterMSE f msExp = foldMSE (const EmptyMS)
+                    (\a ms p -> if p a then AddMS a (ms p) else ms p)
+                    (\ms1 ms2 p -> UnionMS (ms1 p) (ms2 p))
+                    (\a ms p -> if p a then RemoveMS a (ms p) else ms p)
+                    (\g ms p -> MapMS g (ms (p . g))) msExp f
+c)
+isValidMSE :: MSExp a -> Bool
+isValidMSE = recMSE True
+                    (\_ _ b -> b)
+                    (\ms1 b1 ms2 b2 -> b1 && b2)
+                    (\a ms b -> ocursMSE a ms > 0 && b)
+                    (\f ms b -> b)
+d)
+evalMSE :: Eq a => MSExp a -> [a]
+evalMSE = foldMSE [] (\a as -> a : as) (\as1 as2 -> as1 ++ as2) (\a as -> listWithout a as) (\f as -> map f as)
+
+e)
+simpMSE :: MSExp a -> MSExp a
+simpMSE = foldMSE EmptyMS AddMS simpUnionMS simpRemoveMS simpMapMS

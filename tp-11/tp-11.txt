@@ -497,7 +497,7 @@ find f = foldr (\x r -> if f x
                             else r) Nothing
 f)
 any :: (a -> Bool) -> [a] -> Bool
-any f = foldr ((||) . f) False 
+any f = foldr ((||) . f) False
 g)
 all :: (a -> Bool) -> [a] -> Bool
 all f = foldr ((&&) . f) True
@@ -550,7 +550,7 @@ filter id :: [bool] -> [bool]
 
 (a -> bool) = (b -> b)
 b = bool
-a = b = bool
+a = b = bool 
 -----------------------------------------------------------------------------------------------------------------------------------------------
 b)
 map                   :: (a -> b) -> [a] -> [b]

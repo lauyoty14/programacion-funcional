@@ -1,0 +1,726 @@
+ejercicio 1)
+data ExpA  = Cte Int 
+            | Suma ExpA ExpA 
+            | Prod ExpA ExpA
+
+a)
+foldExpA :: (Int -> b) -> (b -> b -> b) -> (b -> b -> b) -> ExpA -> b
+foldExpA c s p (Cte n) = c n
+foldExpA c s p (Suma e1 e2) = s (foldExpA c s p e1) (foldExpA c s p e2)
+foldExpA c s p (Prod e1 e2) = p (foldExpA c s p e1) (foldExpA c s p e2)
+b) 
+i)
+cantidadDeCeros :: ExpA -> Int
+cantidadDeCeros = foldExpA (\x -> if x == 0 then 1 else 0) (+) (+)
+ii)
+noTieneNegativosExplicitosExpA  ::  ExpA  ->  Bool
+noTieneNegativosExplicitosExpA = foldExpA (\x -> x > 0) (&&) (&&)
+iii)
+simplificarExpA'  ::  ExpA  ->  ExpA
+simplificarExpA' = foldExpA (\x -> Cte x) 
+                            (\e1 e2 -> sumaSinNeutro e1 e2) 
+                            (\e1 e2 -> prodSinNeutroNiCero e1 e2)
+
+sumaSinNeutro :: ExpA -> ExpA -> ExpA
+sumaSinNeutro (Cte 0) e2 = e2
+sumaSinNeutro e1 (Cte 0) = e1
+sumaSinNeutro e1 e2 = Suma e1 e2
+
+prodSinNeutroNiCero :: ExpA -> ExpA -> ExpA
+prodSinNeutroNiCero (Cte 1) e2 = e2
+prodSinNeutroNiCero e1 (Cte 1) = e1
+prodSinNeutroNiCero (Cte 0) _ = Cte 0
+prodSinNeutroNiCero _ (Cte 0) = Cte 0
+prodSinNeutroNiCero e1 e2 = Prod e1 e2
+iv)
+evalExpA' :: ExpA -> Int
+evalExpA' = foldExpA (id) (+) (*)
+v)
+mostrarExpA :: ExpA -> String
+mostrarExpA = foldExpA (show) 
+                       (\r1 r2 -> "(" ++ r1 ++ "+" ++ r2 ++ ")") 
+                       (\r1 r2 -> "(" ++ r1 ++ "*" ++ r2 ++ ")")
+c)
+prop: evalExpA' = evalExpA ?
+dem: por ppio de ext.  evalExpA' expa = evalExp expa ? sea expa :: ExpA.  evalExpA' expa = evalExp expa ?
+por induccion estructural sobre expa:
+caso base)  evalExpA' (Cte i) = evalExp (Cte i) ?
+caso ind.1)  
+    Hi.1) evalExpA' e1 = evalExp e1 !
+    Hi.2) evalExpA' e2 = evalExp e2 !
+    Te.1) evalExpA' (Suma e1 e2) = evalExp (Suma e1 e2) ?
+caso ind.2)
+    Hi.1) evalExpA' e1 = evalExp e1 !
+    Hi.2) evalExpA' e2 = evalExp e2 !
+    Te.1) evalExpA' (Prod e1 e2) = evalExp (Prod)
+
+dem caso base)
+Izd:
+    evalExpA' (Cte i)
+    =                                                                                           (def evalExpA')
+    foldExpA (id) (+) (*) (Cte i)
+    =                                                               (def foldExpA, c <- id, s <- (+), p <- (*))
+    id i
+    =                                                                                                  (def id)
+    i
+Der:
+    evalExp (Cte i)
+    =                                                                                                   (evalExp)
+    i
+
+dem caso ind.1)
+Izd:
+    evalExpA' (Suma e1 e2)
+    =                                            (por lema evalExpA' (Suma e1 e2) = evalExpA' e1 + evalExpA' e2)
+    evalExpA' e1 + evalExpA' e2    
+Der:
+    evalExp (Suma e1 e2)
+    =                                                                                               (def evalExp)
+    evalExpA e1 + evalExpA e2
+    =                                                                                       (por hipotesis 1 y 2)
+    evalExpA' e1 + evalExpA' e2
+
+dem caso ind.2)
+Izd:
+    evalExpA' (Prod e1 e2)
+    =                                            (por lema evalExpA' (Prod e1 e2) = evalExpA' e1 * evalExpA' e2)
+    evalExpA' e1 + evalExpA' e2    
+Der:
+    evalExp (Prod e1 e2)
+    =                                                                                               (def evalExp)
+    evalExpA e1 * evalExpA e2
+    =                                                                                       (por hipotesis 1 y 2)
+    evalExpA' e1 * evalExpA' e2
+----------------------------------------------------------------------------------------------------------------
+lema : para todo e1. para todo e2. evalExpa' (Suma e1 e2) = evalExpA' e1 + evalExpA' e2 ?
+dem: sea e1 :: ExpA y e2 :: ExpA. evalExpa' (Suma e1 e2) = evalExpA' e1 + evalExpA' e2 ?
+
+Izd:
+    evalExpa' (Suma e1 e2)
+    =                                                                                           (def evalExpa')
+    foldExpA (id) (+) (*) (Suma e1 e2)
+    =                                                               (def foldExpA, c <- (id), s <- (+), p <- (*))
+    (+) (foldExpA (id) (+) (*) e1) (foldExpA (id) (+) (*) e2)
+    =                                                                                                   (def (+))
+    (foldExpA (id) (+) (*) e1) + (foldExpA (id) (+) (*) e2)
+Der:
+    evalExpA' e1 + evalExpA' e2
+    =                                                                                             (def evalExpA')
+    (foldExpA (id) (+) (*) e1) + (foldExpA (id) (+) (*) e2)
+----------------------------------------------------------------------------------------------------------------
+lema : para todo e1. para todo e2. evalExpa' (Prod e1 e2) = evalExpA' e1 * evalExpA' e2 ?
+dem: sea e1 :: ExpA y e2 :: ExpA. evalExpa' (Prod e1 e2) = evalExpA' e1 * evalExpA' e2 ?
+
+Izd:
+    evalExpa' (Prod e1 e2)
+    =                                                                                           (def evalExpa')
+    foldExpA (id) (+) (*) (Prod e1 e2)
+    =                                                               (def foldExpA, c <- (id), s <- (+), p <- (*))
+    (*) (foldExpA (id) (+) (*) e1) (foldExpA (id) (+) (*) e2)
+    =                                                                                                   (def (*))
+    (foldExpA (id) (+) (*) e1) * (foldExpA (id) (+) (*) e2)
+Der:
+    evalExpA' e1 * evalExpA' e2
+    =                                                                                             (def evalExpA')
+    (foldExpA (id) (+) (*) e1) * (foldExpA (id) (+) (*) e2)
+----------------------------------------------------------------------------------------------------------------
+D)
+recr :: b -> (a -> [a] -> b -> b) -> [a] -> b
+recr z f []     = z
+recr z f (x:xs) = f x xs (recr z f xs)
+
+rectExpA :: (Int -> b) -> (ExpA -> ExpA -> b -> b -> b) -> (ExpA -> ExpA -> b -> b -> b) -> ExpA -> b
+rectExpA c s p (Cte i)      = c i
+rectExpA c s p (Suma e1 e2) = s e1 e2 (rectExpA c s p e1) (rectExpA c s p e2)
+rectExpA c s p (Prod e1 e2) = p e1 e2 (rectExpA c s p e1) (rectExpA c s p e2)
+E) i)
+cantDeSumaCeros :: ExpA -> Int
+cantDeSumaCeros = recExpA (const 0) 
+                           (\e1 e2 r1 r2 -> if esCero e1 || esCero e2 
+                                            then 1 + r1 + r2 
+                                            else r1 + r2) 
+                           (\e1 e2 r1 r2 -> r1 + r2)
+ 
+esCero :: ExpA -> Bool
+esCero (Cte 0) = True
+esCero _       = False
+ii)
+cantDeProdUnos :: ExpA -> Int
+cantDeProdUnos = recExpA (const 0)
+                          (\e1 e2 r1 r2 -> r1 + r2)                    
+                          (\e1 e2 r1 r2 -> (if esUno e1 || esUno e2 
+                                            then 1 else 0) + r1 + r2)   
+                                        
+esUno :: ExpA -> Bool
+esUno (Cte 1) = True
+esUno _       = False
+----------------------------------------------------------------------------------------------------------------
+ejercicio 2)
+data EA = Const Int | BOp BinOp EA EA 
+data BinOp = Sum | Mul
+a)
+foldEA :: (Int -> b) -> (BinOp -> b -> b -> b) -> EA -> b
+foldEA z f (Const i)      = z i
+foldEA z f (BOp op e1 e2) = f op (foldEA z f e1) (foldEA z f e2)
+b) i)
+noTieneNegativosExplicitosEA  ::  EA  ->  Bool
+noTieneNegativosExplicitosEA = foldEA (>= 0) (\_ r1 r2 -> r1 && r2)
+ii)
+simplificarEA' :: EA -> EA
+simplificarEA' = foldEA (Const) 
+                        (\op r1 r2 -> case op of
+                                        Sum -> simplificarSum r1 r2
+                                        Mul -> simplificarMul r1 r2)
+
+simplificarSum :: EA -> EA -> EA
+simplificarSum (Const 0) e2 = e2
+simplificarSum e1 (Const 0) = e1
+simplificarSum e1 e2 = BOp Sum e1 e2
+
+simplificarMul :: EA -> EA -> EA
+simplificarMul (Const 1) e2 = e2
+simplificarMul e1 (Const 1) = e1
+simplificarMul (Const 0) e2 = Const 0
+simplificarMul e1 (Const 0) = Const 0
+simplificarMul e1 e2 = BOp Mul e1 e2
+iii)
+evalEA'  :: EA -> Int
+evalEA' = foldEA (id) 
+                (\op r1 r2 -> case op of
+                                Sum -> r1 + r2
+                                Mul -> r1 * r2)
+iv)
+showEA :: EA -> String
+showEA = foldEA (show)
+                (\op r1 r2 -> case op of
+                                Sum -> "(" ++ r1 ++ "+" ++ r2 ++ ")"
+                                Mul -> "(" ++ r1 ++ "*" ++ r2 ++ ")")
+v)
+ea2ExpA' :: EA -> ExpA
+ea2ExpA' = foldEA (\x -> Cte x)
+                (\op r1 r2 -> case op of
+                                Sum -> Suma r1 r2
+                                Mul -> Prod r1 r2)
+vi)
+ea2Arbol' :: EA -> ABTree BinOp Int
+ea2Arbol' = foldEA (\x -> Leaf x) 
+                   (\op r1 r2 -> Node op r1 r2)
+c)
+prop: evalEA' = evalEA ?
+dem: por ppio de ext. para todo Ea. evalEA' ea = evalEA Ea ?
+sea ea :: EA. evalEA' ea = evalEA ea ? por induccion estructural sobre ea y planteo de casos:
+caso base) evalEA' (Const i) = evalEA (Const i) ?
+caso ind.) Hi.1) evalEA' e1 = evalEA e1 !
+           Hi.2) evalEA' e2 = evalEA e2 !
+           Te) evalEA' (BOp op e1 e2) = evalEA (BOp op e1 e2) ?
+lema 1) evalEA' (BOp Sum e1 e2) = evalEA' e1 + evalEA' e2
+lema 2) evalEA' (BOp Mul e1 e2) = evalEA' e1 * evalEA' e2
+
+dem caso base)
+Izd:
+    evalEA' (Const i)
+    =                                                                         (def evalEA')
+    foldEA (id) 
+                (\op r1 r2 -> case op of
+                                Sum -> r1 + r2
+                                Mul -> r1 * r2) (Const i)
+    =  (def foldEA, z <- (id), f <- (\op r1 r2 -> case op of Sum -> r1 + r2 Mul -> r1 * r2))
+    id i
+    =                                                                               (def id)
+    i
+Der:
+    evalEA (Const i)
+    =                                                                           (def evalEA)
+    i
+
+dem caso ind.)
+Izd:
+    evalEA' (BOp op e1 e2)
+    caso op = Sum)
+        evalEA' (BOp Sum e1 e2)
+        =                                                                       (por lema 1)
+        evalEA' e1 + evalEA' e2
+        =                                                              (por hipotesis 1 y 2)
+        evalEA e1 + evalEA e2
+    caso op = Mul)
+        evalEA' (BOp Mul e1 e2)
+        =                                                                       (por lema 1)
+        evalEA' e1 * evalEA' e2
+        =                                                              (por hipotesis 1 y 2)
+        evalEA e1 * evalEA e2
+    
+Der:
+    evalEA (BOp op e1 e2)
+    =                                                                           (def evalEA)
+    operar op e1 e2
+    caso op = Sum)
+        operar Sum e1 e2
+        =                                                                       (def operar)
+        evalEA e1 + evalEA e2
+    caso op = Mul)
+        operar Mul e1 e2
+        =                                                                       (def operar)
+        evalEA e1 * evalEA e2
+----------------------------------------------------------------------------------------------------------------
+ejercicio 3)
+data Tree a = EmptyT | NodeT a (Tree a) (Tree a)
+
+a)
+foldT :: b -> (a -> b -> b -> b) -> Tree a -> b
+foldT z f EmptyT          = z
+foldT z f (NodeT a ti td) = f a (foldT z f ti) (foldT z f td) 
+
+b) i)
+mapT :: (a -> b) -> Tree a -> Tree b 
+mapT f = foldT EmptyT (\a ri rd -> NodeT (f a) ri rd)
+ii)
+sumT :: Tree Int -> Int
+sumT = foldT 0 (\i ri rd -> i + ri + rd)
+iii)
+sizeT :: Tree a -> Int 
+sizeT = foldT 0 (\i ri rd -> 1 + ri + rd)
+iv)
+heightT :: Tree a -> Int
+heightT = foldT 0 (\i ri rd -> 1 + (max ri rd))
+v)
+preOrder :: Tree a -> [a]
+preOrder = foldT [] (\a ri rd -> [a] ++ ri ++ rd)
+vi)
+inOrder :: Tree a -> [a]
+inOrder = foldT [] (\a ri rd -> ri ++ [a] ++ rd) 
+vii)
+postOrder :: Tree a -> [a] 
+postOrder = foldT [] (\a ri rd -> ri ++ rd ++ [a])
+viii)
+mirrorT :: Tree a -> Tree a 
+mirrorT = foldT EmptyT (\a ri rd -> NodeT a rd ri)
+ix)
+countByT :: (a -> Bool) -> Tree a -> Int
+countByT f = foldT 0 (\a ri rd -> if f a then 1 + ri + rd else ri + rd)
+x)
+partitionT :: (a -> Bool) -> Tree a -> ([a], [a])
+partitionT f = foldT ([],[]) (\a (xs, ys) (zs, ws) -> if f a
+                                                        then (a:xs ++ zs, ys ++ ws)
+                                                        else (xs ++ zs, a:ys ++ ws))
+xi)
+zipWithT :: (a->b->c) -> Tree a -> Tree b -> Tree c
+zipWithT f = foldT (const EmptyT) 
+                (\a ri rd t -> case t of
+                                EmptyT -> EmptyT
+                                NodeT b ti td -> NodeT (f a b) (ri ti) (rd td)) 
+xii)
+caminoMasLargo :: Tree a -> [a]
+caminoMasLargo = foldT [] (\a ri rd -> if length ri > length rd
+                                        then a:ri
+                                        else a:rd)
+xiii)
+todosLosCaminos :: Tree a -> [[a]]
+todosLosCaminos = foldT [] 
+                    (\a ri rd -> if null ri && null rd 
+                                    then [[a]] 
+                                    else map (a:) (ri ++ rd)) 
+xiv)
+todosLosNiveles :: Tree a -> [[a]]
+todosLosNiveles = foldT [] (\a ri rd -> [a] : zipWithLonger (++) ri rd)
+
+zipWithLonger :: (a -> a -> a) -> [a] -> [a] -> [a]
+zipWithLonger f = foldr (\x rs yss -> case yss of
+                                        []     -> x : rs []        
+                                        (z:zss) -> f x z : rs zss)
+xv)
+nivelN :: Tree a -> Int -> [a]
+nivelN = foldT (const []) (\a ri rd n -> if n == 0
+                                then [a]
+                                else ri (n - 1) ++ rd (n - 1))
+c)
+recT :: b -> (a -> Tree a -> Tree a -> b -> b -> b) -> Tree a -> b
+recT z f EmptyT          = z
+recT z f (NodeT a ti td) = f a ti td (recT z f ti) (recT z f td)
+d) i)
+insertT :: a -> Tree a -> Tree a 
+insertT a = recT (NodeT a EmptyT EmptyT)
+                (\b ti td ri rd -> if a < b 
+                                    then NodeT b ri td
+                                    else NodeT b ti rd)
+ii)
+caminoHasta :: Eq a => a -> Tree a -> [a]
+caminoHasta a = recT []
+                    (\b ti td ri rd -> if a == b
+                                        then [a]
+                                        else if elemT a ti
+                                            then b : ri
+                                            else b : rd
+
+elemT :: Eq a => a -> Tree a -> bool
+elemT a = foldT False (\b ri rd -> a == b || ri || rd)
+                                        
+d) i) prop: para todo f.  sizeT . mapT f = sizeT ?
+dem: por ppio de ext. para todo t. para todo f.  sizeT . mapT f t = sizeT t ?
+sea t :: Tree a. f :: (a -> b). sizeT . mapT f t = sizeT t ? 
+por induccion estructural sobre t:
+caso base) sizeT . mapT f EmptyT = sizeT EmptyT ?
+caso ind.) Hi.1) sizeT . mapT f ti = sizeT ti !
+           Hi.2) sizeT . mapT f td = sizeT td !
+           Te) sizeT . mapT f (NodeT a ti td) = sizeT (NodeT a ti td) ?
+lema 1) sizeT (NodeT a ti td) = 1 + sizeT ti + sizeT td
+lema 2) sizeT (mapT f (NodeT a ti td)) = 1 + sizeT (mapT f ti) + sizeT (mapT f td)
+
+dem caso base)
+Izd:
+    sizeT . mapT f EmptyT
+    =                                       (def (.), f <- sizeT, g <- mapT, x <- f EmptyT)
+    sizeT (mapT f EmptyT)
+    =                                                                            (def mapT)
+    sizeT ((foldT EmptyT (\a ri rd -> NodeT (f a) ri rd)) EmptyT)
+    =                       (def foldT , z <- EmptyT, f <- (\a ri rd -> NodeT (f a) ri rd))
+    sizeT (EmptyT)
+    =                                                                           (def sizeT)
+    foldT 0 (\i ri rd -> 1 + ri + rd) EmptyT
+    =                                   (def foldT, z <- 0, f <- (\i ri rd -> 1 + ri + rd))
+    0
+Der:
+    sizeT EmptyT
+    =                                                                           (def sizeT)
+    foldT 0 (\i ri rd -> 1 + ri + rd) EmptyT
+    =                                   (def foldT, z <- 0, f <- (\i ri rd -> 1 + ri + rd))
+    0
+
+caso ind.)
+Izd:
+    sizeT . mapT f (NodeT a ti td)
+    =                               (def (.), f <- sizeT, g <- mapT, x <- f (NodeT a ti td))
+    sizeT (mapT f (NodeT a ti td))
+    =                                                                               (lema 2)
+    1 + sizeT (mapT f ti) + sizeT (mapT f td)
+    =                                                                  (por hipotesis 1 y 2)
+    1 + sizeT ti + sizeT td
+Der:
+    sizeT (NodeT a ti td)
+    =                                                                           (por lema 1)
+    1 + sizeT ti + sizeT td
+
+lema 1) prop: sizeT (NodeT a ti td) = 1 + sizeT ti + sizeT td ?
+
+Izd:
+    sizeT (NodeT a ti td)
+    =                                                                            (def sizeT)
+    foldT 0 (\i ri rd -> 1 + ri + rd) (NodeT a ti td)
+    =                                    (def foldT, z <- 0, f <- (\i ri rd -> 1 + ri + rd))
+    ((\i ri rd -> 1 + ri + rd) a 
+        (foldT 0 (\i ri rd -> 1 + ri + rd) ti) 
+        (foldT 0 (\i ri rd -> 1 + ri + rd) td)) (NodeT a ti td)
+    =                                                                    (aplicación lambda)
+    1 + (foldT 0 (\i ri rd -> 1 + ri + rd) ti) + (foldT 0 (\i ri rd -> 1 + ri + rd) td)
+    =                                                                           (def sizeT)
+    1 + sizeT ti + sizeT td 
+Der:
+    1 + sizeT ti + sizeT td
+
+lema 2) prop: sizeT (mapT f (NodeT a ti td)) = 1 + sizeT (mapT f ti) + sizeT (mapT f td) ?
+Izd:
+    sizeT (mapT f (NodeT a ti td))
+    =                                                                             (def mapT)
+    sizeT (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) (NodeT a ti td))
+    =                         (def foldT, z <- EmptyT, f <- (\a ri rd -> NodeT (f a) ri rd))
+    sizeT ((\a ri rd -> NodeT (f a) ri rd) a 
+            (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) ti) 
+            (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) td) )
+    =                                                                    (aplicacion lambda)
+    sizeT (NodeT (f a) 
+        (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) ti) 
+        (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) td))
+    =                                                                            (def sizeT)
+    foldT 0 (\i ri rd -> 1 + ri + rd) (NodeT (f a) 
+        (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) ti) 
+        (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) td))
+    =                                    (def foldT, z <- 0, f <- (\i ri rd -> 1 + ri + rd))
+    (\i ri rd -> 1 + ri + rd) 
+         (f a) 
+        (foldT 0 (\i ri rd -> 1 + ri + rd) (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) ti)) 
+        (foldT 0 (\i ri rd -> 1 + ri + rd)  (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) td))
+    =                                                                   (aplicacion lambda)
+    1 + (foldT 0 (\i ri rd -> 1 + ri + rd) (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) ti))
+     + (foldT 0 (\i ri rd -> 1 + ri + rd) (foldT EmptyT (\a ri rd -> NodeT (f a) ri rd) td))
+    =                                                                            (def mapT)
+    1 + (foldT 0 (\i ri rd -> 1 + ri + rd) (mapT f ti))
+     + (foldT 0 (\i ri rd -> 1 + ri + rd) (mapT f td))
+    =                                                                           (def sizeT)
+    1 + sizeT (mapT f ti) + sizeT (mapT f td)
+Der: 
+    1 + sizeT (mapT f ti) + sizeT (mapT f td)
+-------------------------------------------------------------------------------------------
+iii) prop: foldT EmptyT NodeT = id ?
+dem: por ppio de ext. para todo t. foldT EmptyT NodeT t = id t ?
+sea tree :: Tree a. foldT EmptyT NodeT tree = id tree ?
+por induccion estructural sobre tree:
+caso base) foldT EmptyT NodeT EmptyT = id EmptyT ? 
+caso ind.)
+    Hi.1) foldT EmptyT NodeT ti = id ti !
+    Hi.2) foldT EmptyT NodeT td = id td !
+    Te) foldT EmptyT NodeT (NodeT a ti td) = id (NodeT a ti td) ?
+
+dem caso base)
+Izd:
+    foldT EmptyT NodeT EmptyT
+    =                                                   (def foldT, z <- EmptyT, f <- NodeT)
+    EmptyT
+Der:
+    id EmptyT  
+    =                                                                               (def id)
+    EmptyT
+
+dem caso ind.)
+Izd:
+    foldT EmptyT NodeT (NodeT a ti td)
+    =                                                   (def foldT, z <- EmptyT, f <- NodeT)
+    NodeT a (foldT EmptyT NodeT ti) (foldT EmptyT NodeT td)
+    =                                                                  (por hipotesis 1 y 2)
+    NodeT a (id ti) (id td)
+    =                                                                    (def id, dos veces)
+    NodeT a ti td
+Der:
+    id (NodeT a ti td)
+    =                                                                               (def id)
+    NodeT a ti td
+-------------------------------------------------------------------------------------------
+ejercicio 4)
+data Dir = Left | Right | Straight 
+data Mapa a = Cofre [a]  
+            | Nada (Mapa a)  
+            | Bifurcacion [a] (Mapa a) (Mapa a) 
+
+a)
+foldM :: ([a] -> b) -> (b -> b) -> ([a] -> b -> b -> b) -> Mapa a -> b
+foldM c _ _ (Cofre xs)                 = c xs
+foldM c n b (Nada map)                 = n (foldM c n b map)
+foldM c n b (Bifurcacion xs map1 map2) = b xs (foldM c n b map1) (foldM c n b map2)
+
+recM :: ([a] -> b) -> (Mapa a -> b -> b) -> ([a] -> Mapa a -> b -> Mapa a -> b -> b) -> Mapa a -> b
+recM c _ _ (Cofre xs) = c xs
+recM c n b (Nada map) = n map (recM c n b map)
+recM c n b (Bifurcacion xs map1 map2) = b xs map1 (recM c n b map1) map2 (recM c n b map2)
+
+b) i)
+objects  :: Mapa a -> [a]
+objects = foldM (id) (id) (\xs r1 r2 -> xs ++ r1 ++ r2)
+ii)
+mapM :: (a -> b) -> Mapa a -> Mapa b
+mapM f = foldM (\xs -> Cofre (map f xs)) (Nada) (\xs r1 r2 -> Bifurcacion (map f xs) r1 r2)
+iii)
+has :: (a -> Bool) -> Mapa a -> Bool
+has f = foldM (\xs -> any f xs) (id) (\xs r1 r2 -> (any f xs) || r1 || r2)
+iv)
+hasObjectAt :: (a->Bool) -> Mapa a -> [Dir] -> Bool
+hasObjectAt f = foldM   (\xs ys -> case ys of
+                                    [] -> any f xs
+                                    (z:zs) -> False)
+                        (\r ys -> case ys of
+                                    [] -> False
+                                    (z:zs) -> case z of
+                                                Straight -> r zs
+                                                _ -> False)
+                        (\xs r1 r2 ys -> case ys of 
+                                            [] -> any f xs
+                                            (z:zs) -> case z of
+                                                        Left -> r1 zs
+                                                        Right -> r2 zs
+                                                        _ -> False)
+v)
+longestPath :: Mapa a -> [Dir]
+longestPath = foldM (const []) 
+                (\r -> Straight : r) 
+                (\_ r1 r2 -> if length r1 > length r2
+                                then Left : r1
+                                else Right : r2 )
+vi)
+objectsOfLongestPath  ::  Mapa  a  ->  [a]
+objectsOfLongestPath = fst . foldM (\xs -> (xs, 0))
+                                    (\r -> let (xs, n) = r in (xs, n + 1))
+                                    (\xs r1 r2 -> 
+                                                let (ys, l1) = r1
+                                                    (zs, l2) = r2 in
+                                                if l1 > l2
+                                                    then (xs ++ ys , l1 + 1)
+                                                    else (xs ++ zs , l2 + 1))
+vii)
+allPaths  ::  Mapa  a  ->  [[Dir]]
+allPaths = foldM (const [[]]) (\r -> map (Straight :) r)
+                (\_ r1 r2 -> (map (Left :) r1) ++ (map (Right :) r2))
+viii)
+objectsPerLevel  ::  Mapa a -> [[a]]
+objectsPerLevel = foldM (\xs -> [xs]) (\r -> [] : r) 
+                    (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2)
+------------------------------------------------------------------------------------------
+C) prop: para todo x.  has (==x) = any (elem x) . objectsPerLevel ? 
+dem: por ppio de ext. para todo MapA. para todo x. 
+    has (==x) MapA = any (elem x) . objectsPerLevel MapA ?
+sea map :: Mapa a. x :: a. has (==x) map = any (elem x) . objectsPerLevel map ?
+por induccion estructural sobre map:
+caso base) has (==x) (Cofre xs) = any (elem x) . objectsPerLevel (Cofre xs) ?
+caso ind.1)
+        Hi) has (==x) map = any (elem x) . objectsPerLevel map ! 
+        Te) has (==x) (Nada map) = any (elem x) . objectsPerLevel (Nada map) ?
+caso ind.2) 
+        Hi.1) has (==x) mapI = any (elem x) . objectsPerLevel mapI ! 
+        Hi.2) has (==x) mapD = any (elem x) . objectsPerLevel mapD ! 
+        Te) has (==x) (Bifurcacion xs mapI mapD) = any (elem x) . objectsPerLevel (Bifurcacion xs mapI mapD) ?
+lema 1) any (elem x) [xs] = any (==x) xs !
+lema 2) any (==x) xs = (elem x) xs !
+lema 3) any (elem x) xss || any (elem x) yss = any (elem x) (zipWithLonger (++) xss yss
+
+dem caso base)
+Izd:
+    has (==x) (Cofre xs)
+    =                                                                                       (def has, f <- (==x))
+    foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) (Cofre xs)
+    =                                                                     (def foldM, c <- (\xs -> any (==x) xs))
+    (\xs -> any (==x) xs) xs
+    =                                                                                         (aplicacion lambda)
+    any (==x) xs
+Der:
+    any (elem x) . objectsPerLevel (Cofre xs)
+    =                                         (def (.), f <- any (elem x), g <- objectsPerLevel, x <- (Cofre xs))
+    any (elem x) (objectsPerLevel (Cofre xs))
+    =                                                                                       (def objectsPerLevel)
+    any (elem x) (foldM (\xs -> [xs]) (\r -> [] : r) 
+                    (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) (Cofre xs))
+    =                                                                             (def foldM, c <- (\xs -> [xs]))
+    any (elem x) ((\xs -> [xs]) (cofre xs))
+    =                                                                                         (aplicacion lambda)
+    any (elem x) [xs]
+    =                                                                (por lema. any (elem x) [xs] = any (==x) xs)
+    any (==x) xs
+
+dem caso ind.1)
+Izd:
+    has (==x) (Nada map)
+    =                                                                                       (def has, f <- (==x))
+    foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) (Nada map)
+    =                                                                                        (def foldM, n <- id)
+    id (foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) map)
+    =                                                                                                    (def id)
+    foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) map
+    =                                                                                             (def has (==x))
+    has (==x) map
+    =                                                                                             (por hipotesis)
+    any (elem x) . objectsPerLevel map
+    =                                                                                                   (def (.))
+    any (elem x) (objectsPerLevel map)
+Der:
+    any (elem x) . objectsPerLevel (Nada map)
+    =                                         (def (.), f <- any (elem x), g <- objectsPerLevel, x <- (Nada map))
+    any (elem x) (objectsPerLevel (Nada map))
+    =                                                                                       (def objectsPerLevel)
+    any (elem x) (foldM (\xs -> [xs]) (\r -> [] : r) 
+                    (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) (Nada map))
+    =                                                                            (def foldM, n <- (\r -> [] : r))
+    any (elem x) ((\r -> [] : r) (foldM (\xs -> [xs]) (\r -> [] : r) 
+                                    (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) map))
+    =                                                                                         (aplicacion lambda)
+    any (elem x) ([] : (foldM (\xs -> [xs]) (\r -> [] : r) 
+                            (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) map))
+    =                                                                                       (def objectsPerLevel)
+    any (elem x) ([] : objectsPerLevel map)
+    =                                                    (def any, f <- elem x, xs <- ([] : objectsPerLevel map))
+    (elem x) [] || any (elem x) (objectsPerLevel map)
+    =                                                                                       (def elem, caso base)
+    False || any (elem x) (objectsPerLevel map)
+    =                                                                                                  (def (||))
+    any (elem x) (objectsPerLevel map)
+
+dem caso ind.2)
+Izd:
+    has (==x) (Bifurcacion xs mapI mapD)
+    =                                                                                       (def has, f <- (==x))
+    foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) (Bifurcacion xs mapI mapD)
+    =                                               (def foldM, b <- ((\xs r1 r2 -> (any (==x) xs) || r1 || r2)))
+    (\xs r1 r2 -> (any (==x) xs) || r1 || r2) xs 
+        foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) mapI
+        foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) mapD
+    =                                                                                        (aplicacion lambda)    
+    (any (==x) xs) 
+         || foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) mapI
+         || foldM (\xs -> any (==x) xs) (id) (\xs r1 r2 -> (any (==x) xs) || r1 || r2) mapD
+    =                                                                                             (def has (==x))    
+    (any (==x) xs) || has (==x) mapI || has (==x) mapD
+    =                                                                                       (por hipotesis 1 y 2)
+    (any (==x) xs) || any (elem x) . objectsPerLevel mapI || any (elem x) . objectsPerLevel mapD
+    =                                                                                        (def (.), dos veces)
+    (any (==x) xs) || any (elem x) (objectsPerLevel mapI) || any (elem x) (objectsPerLevel mapD)
+    =                                                                                            (por lema 2 y 3)
+    (elem x) xs || any (elem x) (zipWithLonger (++) (objectsPerLevel mapI) (objectsPerLevel mapD))
+Der:
+    any (elem x) . objectsPerLevel (Bifurcacion xs mapI mapD) 
+    =                         (def (.), f <- any (elem x), g <- objectsPerLevel, x <- (Bifurcacion xs mapI mapD))
+    any (elem x) (objectsPerLevel (Bifurcacion xs mapI mapD)) 
+    =                                                                                       (def objectsPerLevel)
+    any (elem x) (foldM (\xs -> [xs]) (\r -> [] : r) 
+                    (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) (Bifurcacion xs mapI mapD))
+    =                                              (def foldM, b <- (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2))
+    any (elem x) ((\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) xs 
+                    foldM (\xs -> [xs]) (\r -> [] : r) 
+                        (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) mapI
+                    foldM (\xs -> [xs]) (\r -> [] : r) 
+                        (\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) mapD)
+    =                                                                                       (def objectsPerLevel)
+    any (elem x) ((\xs r1 r2 -> xs : zipWithLonger (++) r1 r2) xs (objectsPerLevel mapI) (objectsPerLevel mapD)) 
+    =                                                                                         (aplicacion lambda)
+    any (elem x) (xs : zipWithLonger (++) (objectsPerLevel mapI) (objectsPerLevel mapD))
+    =                                                                                    (def any, f <- (elem x))
+    (elem x) xs || any (elem x) (zipWithLonger (++) (objectsPerLevel mapI) (objectsPerLevel mapD))
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ejercicio 5)
+data GTree a = GNode a [GTree a]
+
+a)
+foldGT0 :: (a -> [b] -> b) -> GTree a -> b
+foldGT0 f (GNode x ts) = f x (map (foldGT0 f) ts)
+
+recGT0 :: (a -> [GTree a] -> [b] -> b) -> GTree a -> b
+recGT0 f (GNode x ts) = f x ts (map (recGT0 f) ts)
+
+foldGT1 :: (a -> c -> b) -> (b -> c -> c) -> c -> GTree a -> b
+foldGT1 g f z (GNode x ts) = g x (foldr f z (map (foldGT1 g f z) ts))
+
+recGT1 :: (a -> [GTree a] -> c -> b) -> (b -> c -> c) -> c -> GTree a -> b
+recGT1 g f z (GNode x ts) = g x ts (foldr f z (map (recGT1 g f z) ts))
+
+foldGT :: (a -> c -> b) -> ([b] -> c) -> GTree a -> b
+foldGT g k (GNode x ts) = g x (k (map (foldGT g k) ts))
+
+recGT :: (a -> [GTree a] -> c -> b) -> ([b] -> c) -> GTree a -> b
+recGT g k (Gnode x ts) = g x ts (k (map (recGT g k) ts))
+
+b) i)
+mapGT :: (a -> b) -> GTree a -> GTree b
+mapGT f = foldGT (\x r -> GNode (f x) r) (id)
+ii)
+sumGT :: GTree Int -> Int
+sumGT = foldGT (+) (sum) 
+iii)
+sizeGT :: GTree a -> Int
+sizeGT = foldGT (\x r -> 1 + r) sum
+iv)
+heightGT :: GTree a -> Int
+heightGT = foldGT (const (+1)) (foldr max 0)
+v)
+preOrderGT :: GTree a -> [a]
+preOrderGT = foldGT (:) concat
+vi)
+postOrderGT :: GTree a -> [a]
+postOrderGT = foldGT snoc concat
+vii)
+mirrorGT :: GTree a -> GTree a
+mirrorGT = foldGT GNode reverse
+viii)
+countByGT :: (a -> Bool) -> GTree a -> Int
+countByGT f = foldGT (\x r -> if f x then 1 + r else r) (sum)
+ix)
+partitionGT :: (a -> Bool) -> GTree a -> ([a], [a])
+partitionGT f = foldGT (\x r -> let (xs,ys) = r in
+                                if f x 
+                                    then (x:xs, ys)
+                                else (xs, x:ys)) (sumaTuplas)
+
+sumaTuplas :: [([a],[a])] -> ([a],[a])
+sumaTuplas = foldr (\x r -> let (xs,ys) = x in )
