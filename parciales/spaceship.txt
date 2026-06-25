@@ -1,0 +1,149 @@
+ejercicio 1)
+a) 
+shielded :: Spaceship -> Bool
+shielded Plug = False
+shielded (Module c s1 s2) = esGenerador c || (shielded s1) || shielded s2
+
+esGenerador :: Component -> Bool
+esGenerador Shield = True
+esGenerador _      = False
+
+b)
+armed :: Spaceship -> Bool
+armed Plug = False
+armed (Module c s1 s2) = esCañon c || armed s1 || armed s2
+
+esCañon :: Component -> Bool
+esCañon Cannon = True
+esCañon _      = False
+
+c) 
+thrust :: Spaceship -> Int
+thrust Plug = 0
+thrust (Module c s1 s2) = 
+        if esMotor c && esHoja s1 && esHoja s2
+            then 1 + thrust s1 + thrust s2
+            else thrust s1 + thrust s2
+
+esMotor :: Component -> Bool
+esMotor Engine = True
+esMotor _      = False
+
+esHoja :: Spaceship -> Bool
+esHoja Plug = True
+esHoja _    = False
+
+d)
+wreck :: Hazard -> Spaceship -> Spaceship
+wreck (d , n , _) spaceship = impactInDirectionLevel d n spaceship
+
+impactInDirectionLevel :: Direction -> Int -> Spaceship -> Spaceship
+impactInDirectionLevel _ _ Plug = Plug
+impactInDirectionLevel Larboard n (Module c s1 s2) =
+                            if n <= 1
+                                then Plug
+                                else Module c (impactInDirectionLevel Larboard (n - 1) s1) s2
+impactInDirectionLevel Starboard n (Module c s1 s2) =
+                            if n <= 1
+                                then Plug
+                                else Module c s1 (impactInDirectionLevel Starboard (n - 1) s2)
+
+ejercicio 2)
+foldSS :: (Component -> b -> b -> b) -> b -> Spacesship -> b
+foldSS _ z Plug = z
+foldSS f z (Module c s1 s2) = f c (foldSS f z s1) (foldSS f z s2)
+
+rectSS :: (Component -> Spaceship -> b -> Spaceship -> b -> b) -> b -> Spaceship -> b
+rectSS _ z Plug = z
+rectSS f z (Module c s1 s2) = f c s1 (foldSS f z s1) s2 (foldSS f z s2)
+
+
+ejercicio 3)
+a)
+capacity :: Spaceship -> Int
+capacity = foldSS (\c c1 c2 -> case c of 
+                                Cargo -> 1 + c1 + c2
+                                _ -> c1 + c2) 0
+b)
+largest :: [Spaceship] -> Spaceship
+largest = fst . foldr (\n (win, capW) -> let capN = capacity n in 
+                                         if capN > capW 
+                                            then (n, capN) 
+                                            else (win, capW)) 
+                      (Plug, 0)
+c)
+dimensions :: Spaceship -> (Int,Int)
+dimensions spaceship = (altoSpacesShip spaceship, anchoMaximo spaceship)
+
+altoSpacesShip :: Spaceship -> int
+altoSpacesShio = foldSS (\c s1 l1 s2 l2 -> if largoDe s1 > largoDe s2  
+                                            then 1 + l1 
+                                            else 1 + l2)
+
+anchoMaximo :: Spaceship -> Int
+anchoMaximo s = maximum (0 : anchosPorNivel s)
+
+anchosPorNivel :: Spaceship -> [Int]
+anchosPorNivel = foldSS (\comp anchosL anchosR -> 1 : combinarAnchos anchosL anchosR) []
+
+combinarAnchos :: [Int] -> [Int] -> [Int]
+combinarAnchos [] ys = ys
+combinarAnchos xs [] = xs
+combinarAnchos (x:xs) (y:ys) = (x + y) : combinarAnchos xs ys
+d)
+manoeuvre :: Spaceship -> [Hazard] -> Spaceship
+manoeuvre ship hs = foldr (\h manoShip -> let (dir, level, size) = h
+                                        escudada = shielded manoShip in
+                                case size of 
+                                    Small -> if escudada
+                                                then manoShip
+                                            else wreck h manoShip
+                                    Big -> if armed manoShip
+                                            then if escudada 
+                                                    then manoShip
+                                                    else wreck (dir, level, Small) manoShip
+                                            else wreck h manoShip
+                                    Torpedo -> wreck h manoShip) ship hs
+e)
+test :: [Spaceship] -> [Hazard] -> [Spaceship]
+test ships hs = filter (\s -> thrust (manoeuvre s hs) > 0) ships
+
+ejercicio 4)
+Prop : ¿ para todo sp :: Spaceship. componentes (replace f sp) = map f (componentes sp) ?
+¿ para todo sp :: Spaceship. (componentes (replace f sp)) = map f (componentes sp) ?
+sea ship un Spaceship. por ppio de ext en la estructura de ship : 
+caso base: ship = Plug) 
+    ¿ componentes (replace f ship) = map f (componentes ship) ? 
+caso ind. : ship = Module c sp1 sp2) 
+    Hi.1) componentes (replace f sp1) = map f (componentes sp1) !
+    Hi.2) componentes (replace f sp2) = map f (componentes sp2) !
+    Te) componentes (replace f (Module c sp1 sp2)) = map f (componentes (Module c sp1 sp2)) ?
+
+caso base) 
+componentes (replace f Plug)
+=                                                                                               (por remplace.1)
+componentes Plug
+=                                                                                             (por componentes.1)
+[]
+=                                                                                                     (por map.1)
+map f []
+=                                                                                            (por componentes.1)
+map f (componentes Plug)
+
+caso ind.)
+componentes (replace f (Module cs sp1 sp2))
+=                                                                                               (por remplace.2)
+componentes (Module (f c) (remplace f sp1) (replace f sp2))
+=                                                                                            (por componentes.2)
+componentes (remplace f sp1) ++ [(f c)] ++ componentes (remplace f sp2)
+=                                                                                           (por hipotesis 1 y 2)
+map f (componentes sp1) ++ [(f c)] ++ map f (componentes sp2)
+=                                                                                                   (por lema 1)
+map f (componentes sp1) ++ map f [c] ++ map f (componentes sp2)
+=                                                                                                   (por lema 2)
+map f (components s1 ++ [c] ++ components s2)
+=                                                                                            (por componentes.2)
+map f (componentes (Module c sp1 sp2))
+
+lema 1: [(f x)] = map f [x]
+lema 2: map f xs ++ map f ys ++ map f zs = map f (xs ++ ys ++ zs)

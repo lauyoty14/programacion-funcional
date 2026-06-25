@@ -1,0 +1,71 @@
+ejercicio 1)
+a)
+defined :: Ord a => PrefixT a -> [a] -> Bool
+defined _ []                     = True
+defined Nil _                   = False
+defined (Node a pi pa pd) (x:xs) = 
+    if x < a
+        then defined pi (x:xs)
+        else if x > a
+                then defined pd (x:xs) 
+                else defined pa xs
+b)
+insert :: Ord a => PrefixT a -> [a] -> PrefixT a
+insert prefix [] = prefix
+insert Nil (x:xs) = Node x Nil (insert Nil xs) Nil
+insert (Node a pi pa pd) (x:xs) = 
+    if x < a 
+        then Node a (insert pi (x:xs)) pa pd
+        else if x > a 
+                then Node a pi pa (insert pd (x:xs))
+                else Node a pi (insert pa xs) pd
+c)
+join :: Ord a => PrefixT a -> PrefixT a -> PrefixT a
+join Nil Nil    = Nil
+join Nil prefix = prefix
+join prefix Nil = prefix
+join (Node a pi1 pa pd1) (Node b pi2 pb pd2) =
+    if a == b
+        then Node a (join pi1 pi2) (join pa pb) (join pd1 pd2)
+        else if a < b 
+            then Node b (join pi2 (Node a pi1 pa pd1)) pb pd2
+            else Node b pi2 pb (join pd2 (Node a pi1 pa pd1))
+d)
+delete :: Ord a => PrefixT a -> [a] -> PrefixT a
+delete Nil _ = Nil
+delete (Node a pi pa pd) (p:ps) =
+    if a == p
+        then if not (null ps)
+                then Node a pi (delete pa ps) pd
+                else join pi pd
+        else if a < p 
+                then Node a pi pa (delete pd (p:ps))
+                else Node a (delete pi (p:ps)) pa pd
+
+ejercicio 2)
+foldPrefixT :: b -> (a -> b -> b -> b -> b) -> PrefixT a -> b
+foldPrefixT z f Nil = z
+foldPrefixT z f (Node a pi pa pd) = f a (foldPrefixT z f pi) 
+                                        (foldPrefixT z f pa)
+                                        (foldPrefixT z f pd)
+a)
+flatten :: Ord a => PrefixT a -> [[a]]
+flatten = foldPrefixT [[]] (\a resI resA resD -> resI ++ ([a] : map (a:) resA) ++ resD) 
+b)
+insertAll :: Ord a => [[a]] -> PrefixT a
+insertAll = foldr (\ps prefix -> insert prefix ps) Nil
+c)
+union :: Ord a => [PrefixT a] -> PrefixT a
+union = foldr (\pr prs -> join pr prs) Nil
+d)
+intersect :: Ord a => PrefixT a -> PrefixT a -> PrefixT a
+intersect prefix1 prefix2 = insertAll (filter (defined prefix1) (flatten prefix2))
+e)
+palindromes :: Ord a => PrefixT a -> PrefixT a
+palindromes prefix = insertAll (filter (\xs -> xs == reverse xs) (flatten prefix))
+f)
+trim :: Ord a => [[a]] -> [[a]]
+trim ps = foldPrefixT [] (\a resI resA resD -> 
+                            if null resA 
+                            then resI ++ [[a]] ++ resD
+                            else resI ++ (map (a:) resA) ++ resD) (insertAll ps)
