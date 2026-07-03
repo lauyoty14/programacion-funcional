@@ -1,0 +1,271 @@
+type Potencia = Int
+type Ataque = Int
+
+data Red = Terminal Potencia
+         | Servidor Potencia Red
+         | Firewall (Ataque -> Bool) Red
+         | Switch (Ataque -> Dir) Red Red
+
+data Dir = Izq | Der | Forward
+type Ruta = [Dir]
+
+applyFst :: (a -> a) -> (a, b) -> (a, b)
+applyFst f (n, y) = (f n, y)
+
+combinarFirewalls :: Red -> Red
+combinarFirewalls (Terminal x) =
+	Terminal x
+combinarFirewalls (Servidor x r) =
+	Servidor x (combinarFirewalls r)
+combinarFirewalls (Firewall fb r) =
+	juntarFirewalls fb (combinarFirewalls r)
+combinarFirewalls (Switch fd ri rd) =
+	Switch fd (combinarFirewalls ri)
+	          (combinarFirewalls rd)
+
+juntarFirewalls :: (Ataque -> Bool) -> Red -> Red
+juntarFirewalls fb1 (Firewall fb2 r) =
+	Firewall (\a -> fb1 a && fb2 a) r
+juntarFirewalls fb1 r =	Firewall fb1 r
+
+----------------------------------------------------------------
+
+intensidadRestante :: Ataque -> Red -> Maybe Ataque
+intensidadRestante n (Terminal x) =
+	Just (n - x)
+intensidadRestante n (Servidor x r) =
+	intensidadRestante (n + x) r
+intensidadRestante n (Firewall fb r) =
+	if fb n
+	   then intensidadRestante n r
+	   else Nothing
+intensidadRestante n (Switch fd ri rd) =
+	case fd n of
+		Der -> case intensidadRestante n rd of
+			        Nothing -> Nothing
+			        Just n' -> intensidadRestante n' ri
+		_   -> case intensidadRestante n ri of
+			        Nothing -> Nothing
+			        Just n' -> intensidadRestante n' rd
+
+----------------------------------------------------------------
+
+pasosHastaBloqueo :: Ataque -> Red -> Maybe Int
+pasosHastaBloqueo n r = 
+	case pasosRec n r of
+		(n, Nothing) -> Just n
+		(_, _)       -> Nothing
+
+pasosRec :: Ataque -> Red -> (Int, Maybe Ataque)
+pasosRec n (Terminal x) =
+	(1, Just (n - x))
+pasosRec n (Servidor x r) =
+	applyFst (+1) (pasosRec (n + x) r)
+pasosRec n (Firewall fb r) =
+	if fb n
+	   then applyFst (+1) (pasosRec n r)
+	   else (0, Nothing)
+
+pasosRec n (Switch fd ri rd) =
+	case fd n of
+		Der -> case pasosRec n rd of
+			        (pasosD, Nothing) -> (pasosD + 1, Nothing)
+			        (pasosD, Just n') -> let (pasosI, m) = pasosRec n' ri
+			                                 in (pasosI + pasosD + 1, m)
+
+		_   -> case pasosRec n ri of
+			        (pasosI, Nothing) -> (pasosI + 1, Nothing)
+			        (pasosI, Just n') -> let (pasosD, m) = pasosRec n' ri
+			                                 in (pasosI + pasosD + 1, m)
+
+----------------------------------------------------------------------------
+
+rutasAServidores :: Ataque -> Red -> [Ruta]
+rutasAServidores n r = fst (rutasRec n r)
+
+rutasRec :: Ataque -> Red -> ([Ruta], Maybe Ataque)
+rutasRec n (Terminal x) =
+	([], Just (n - x))
+
+rutasRec n (Servidor x r) =
+	let (rutas, m) = rutasRec (n + x) r
+	    in ([] : map (Forward :) rutas, m)
+rutasRec n (Firewall fb r) =
+	if fb n
+	   then let (rutas, m) = rutasRec n r
+	            in (map (Forward :) rutas, m)
+	   else ([], Nothing)
+rutasRec n (Switch fd ri rd) =
+	case fd n of
+		Der -> case rutasRec n rd of
+			        (rutasD, Nothing) -> (map (Der :) rutasD, Nothing)
+			        (rutasD, Just n') -> let (rutasI, m) = rutasRec n' ri
+			                                 in (map (Der :) rutasD ++ map (Izq :) rutasI, m)
+		_   -> case rutasRec n ri of
+			        (rutasI, Nothing) -> (map (Izq :) rutasI, Nothing)
+			        (rutasI, Just n') -> let (rutasD, m) = rutasRec n' ri
+			                                 in (map (Izq :) rutasI ++ map (Der :) rutasD, m)
+
+-----------------------------------------------------------------------------------------------
+
+foldRed :: (Potencia -> b) 
+	-> (Potencia -> b -> b) 
+	-> ((Ataque -> Bool) -> b -> b)
+	-> ((Ataque -> Dir) -> b -> b -> b)
+	-> Red
+	-> b
+foldRed ft fsrv ffr fstw (Terminal x) =
+	ft x
+foldRed ft fsrv ffr fstw (Servidor x r) =
+	fsrv x (foldRed ft fsrv ffr fstw r)
+foldRed ft fsrv ffr fstw (Firewall fb r) =
+	ffr fb (foldRed ft fsrv ffr fstw r)
+foldRed ft fsrv ffr fstw (Switch fd ri rd) =
+	fstw fd (foldRed ft fsrv ffr fstw ri)
+	        (foldRed ft fsrv ffr fstw rd)
+
+recRed :: (Potencia -> b) 
+	-> (Potencia -> Red -> b -> b) 
+	-> ((Ataque -> Bool) -> Red -> b -> b)
+	-> ((Ataque -> Dir) -> Red -> Red -> b -> b -> b)
+	-> Red
+	-> b
+recRed ft fsrv ffr fstw (Terminal x) =
+	ft x
+recRed ft fsrv ffr fstw (Servidor x r) =
+	fsrv x r (recRed ft fsrv ffr fstw r)
+recRed ft fsrv ffr fstw (Firewall fb r) =
+	ffr fb r (recRed ft fsrv ffr fstw r)
+recRed ft fsrv ffr fstw (Switch fd ri rd) =
+	fstw fd ri rd (recRed ft fsrv ffr fstw ri) (recRed ft fsrv ffr fstw rd)
+
+combinarFirewalls' = foldRed Terminal Servidor juntarFirewalls Switch
+
+intensidadRestante' n red = foldRed ft fsrv ffr fstw red n
+	where ft x n' = Just (n' - x)
+	      fsrv x fm n' = fm (n' + x)
+	      ffr fb fm n' = if fb n'
+	      	                then fm n'
+	      	                else Nothing
+	      fstw fd fmi fmd n' = case fd n' of
+	      	                      Der -> case fmd n' of
+	      	                      	          Nothing  -> Nothing
+	      	                      	          Just n'' -> fmi n''
+	      	                      _   -> case fmi n' of
+	      	                      	          Nothing  -> Nothing
+	      	                      	          Just n'' -> fmd n''
+
+-- EJERCICIO 2: Demostrar la siguiente propiedad.
+
+Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i
+
+Ayuda 1. no tener en cuenta el caso del switch 
+
+Ayuda 2. Considerar la siguiente propiedad ya demostrada:
+Para todo b1, b2, e1, e2. if b1 then (if b2 then e1 else e2) else e2 = if b1 && b2 then e1 else e2
+
+prop : Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i ?
+dem : por ppio de ext y por def (.). es equivalente a 
+Para todo red :: Red. Para todo i :: Ataque, 
+intensidadRestante i (combinarFirewalls red) = intensidadRestante i red ?
+sea r una red cualquiera y a un ataque cualquiera. 
+intensidadRestante a (combinarFirewalls r) = intensidadRestante a r ?
+por induccion estructural sobre r: 
+caso base) intensidadRestante a (combinarFirewalls (Terminal p)) = intensidadRestante a (Terminal p) ?
+caso ind.1) 
+    Hi) intensidadRestante a (combinarFirewalls r) = intensidadRestante a r !
+    Te) intensidadRestante a (combinarFirewalls (Servidor p r)) = intensidadRestante a (Servidor p r) ?
+caso ind.2)
+    Hi) intensidadRestante a (combinarFirewalls r) = intensidadRestante a r !
+    Te) intensidadRestante a (combinarFirewalls (Firewall f r)) = intensidadRestante a (Firewall f r) ?
+el tercer caso inductivo no sera tenido en cuenta
+
+dem caso base) 
+intensidadRestante a (combinarFirewalls (Terminal p))
+=                                                                                       (def combinarFirewalls.1)
+intensidadRestante a (Terminal p)
+=                                                                                      (def intensidadRestante.1)
+Just (a - p)
+=                                                                                      (def intensidadRestante.1)
+intensidadRestante a (Terminal p)
+
+dem caso ind.1)
+intensidadRestante a (combinarFirewalls (Servidor p r)) 
+=                                                                                       (def combinarFirewalls.2)
+intensidadRestante a (Servidor p (combinarFirewalls r))
+=                                                                                      (def intensidadRestante.2)
+intensidadRestante (a + p) (combinarFirewalls r)
+=                                                                                 (por hipotesis con a = (a + p))
+intensidadRestante (a + p) r 
+=                                                                                     (def intensidadRestante.2)
+intensidadRestante a (Servidor p r)
+
+dem caso ind.2)
+Izd: 
+	intensidadRestante a (combinarFirewalls (Firewall f r))
+	= 																						(def combinarFirewalls.3)
+	intensidadRestante a (juntarFirewalls f (combinarFirewalls r))
+	= (planteo casos)
+	caso combinarFirewalls = Firewalls q r)
+		intensidadRestante a (Firewall (\a -> f a && q a) r)
+		= 																			   (def intensidadRestante.3)
+		if (\a -> f a && q a) a
+			then intensidadRestante a r
+			else Nothing
+		= 																						  (planteo casos)
+		caso (\a -> f a && q a) a = True)
+			if True
+				then intensidadRestante a r
+				else Nothing
+			= 																			  (evaluo el condicional)
+			intensidadRestante a r 
+		caso (\a -> f a && q a) a = False)
+			if False
+				then intensidadRestante a r
+				else Nothing
+			= 																			  (evaluo el condicional)
+			Nothing
+	caso combinarFirewalls = r)
+		intensidadRestante a (Firewall f (combinarFirewalls r))
+		= 																			   (def intensidadRestante.3)
+		if f a
+			then intensidadRestante a (combinarFirewalls r)
+			else Nothing
+		= 																						  (planteo casos)
+		caso f a = True
+			if True
+				then intensidadRestante a (combinarFirewalls r)
+				else Nothing
+			= 																					   (evaluo el if)
+			intensidadRestante a (combinarFirewalls r)
+			= 																				       (por hipotesis)
+			intensidadRestante a r
+
+		caso f a = False
+			if False
+				then intensidadRestante a (combinarFirewalls r)
+				else Nothing
+			= 																					 (evaluo el condicional)
+			Nothing
+Der:
+	intensidadRestante a (Firewall f r)
+	= 																				  (def intensidadRestante.3)
+	if f a
+	   then intensidadRestante a r
+	   else Nothing
+	= 																							 (planteo casos)
+	caso f a = True
+		if True
+			then intensidadRestante a r
+			else Nothing
+		= 																					      (evaluo el if)
+		intensidadRestante a r
+
+	caso f a = False
+		if False
+			then intensidadRestante a r
+			else Nothing
+		= 																					 (evaluo el condicional)
+		Nothing
+
+como ambos lados devuelven lo mismo en ambos casos, y cada caso inductivo es equivalente, la prop se cumple

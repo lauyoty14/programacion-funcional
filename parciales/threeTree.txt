@@ -1,0 +1,11 @@
+data ThreeT a = Leaf a | Branch a (ThreeT a) (ThreeT a) (ThreeT a)
+
+ejercicio 1)
+a)
+sizeTT :: ThreeT a -> Int
+sizeTT (Leaf a) = 1
+sizeTT (Branch a t1 t2 t3) = 1 + sizeTT t1 + sizeTT t2 + sizeTT t3
+b)
+sumTT :: ThreeT Int -> ThreeT Int
+sumTT (Leaf i) = (Leaf i)
+sumTT (Branch i t1 t2 t3) = 

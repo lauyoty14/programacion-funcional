@@ -1,0 +1,82 @@
+data Nim = Empty -- juego vacío  
+    | Heap Int Nim -- pila con n fichas (n>0)  
+    
+type Move = (Int,Int)   -- jugada: de la fila i remover k fichas  
+
+data GameTree = Nil          -- árbol vacío  
+    | Node (Move, GameTree)  -- (jugada, hijos - jugadas del contrincante)  
+            GameTree         -- hermanos (otras jugadas propias)
+
+ejercicio 1) 
+foldNim :: b -> (Int -> b -> b) -> Nim -> b
+foldNim z _ Empty = z
+foldNim z r (Heap i n) = r i (foldNim z r n)  
+
+recNim :: b -> (Int -> Nim -> b -> b) -> Nim -> b
+recNim z _ Empty = z
+recNim z r (Heap i n) = r i n (recNim z r n)
+
+foldGame :: b -> (Move -> b -> b -> b) ->  GameTree -> b
+foldGame z _ Nil = z 
+foldGame z r (Node (mov, game2) game1) = r mov (foldGame z r game2) (foldGame z r game1) 
+
+recGame :: b -> ((Move, GameTree) -> b -> GameTree -> b -> b) -> GameTree -> b 
+recGame z _ Nil = z
+recGame z r (Node (mov, game2) game1) = r (mov, game2) (recGame z r game2) game1 (recGame z r game1)
+
+ejercicio 2)
+a)
+heaps :: Nim -> Int
+heaps = foldNim 0 (\_ r -> r + 1) 
+b)
+chips :: Nim -> Int
+chips = foldNim 0 (\n c -> n + c)
+c)
+mexHeap :: Nim -> Int 
+mexHeap = foldNim 0 (\n m -> max n m)
+d)
+alongside :: Nim -> Nim -> Nim
+alongside nim1 nim2 = foldNim nim2 Heap nim1
+e)
+gameHeight :: GameTree -> Int
+gameHeight = foldGame 0 (\m jugadas2 jugadas1 -> max (1 + jugadas2) jugadas1)
+f)
+branches :: GameTree -> [[Move]]
+branches = foldGame [] (\m jugadas2 jugadas1 -> 
+                            (if null jugadas2 
+                                then [[m]] 
+                                else map (m:) jugadas2) ++ jugadas1)
+
+ejercicio 3)
+a) 
+turn :: Nim -> Move -> Maybe Nim
+turn Empty m = Nothing
+turn (Heap i nim) m = case m of 
+                        (0 , fichas) -> if i > fichas
+                                            then Just (Heap (i - fichas) nim)
+                                            else if i == fichas 
+                                                    then Just nim
+                                                    else Nothing
+                        (filas, fichas) -> 
+                            case turn nim (filas - 1 , fichas) of 
+                                Nothing -> Nothing
+                                Just n -> Just (Heap i n)
+b)
+moves :: Nim -> [Move]
+moves nim = moves' nim 0 
+
+moves' Nim -> Int -> [Move]
+moves' Empty _ = []
+moves' (Heap i nim) fila = if i > 0
+                            then (fila, i) : moves' (Heap (i - 1) nim) fila
+                            else moves' nim (fila + 1)  
+c)
+solve :: Nim -> GameTree
+solve nim = genGT nim (moves nim)
+
+genGT :: Nim -> [Move] -> GameTree
+genGT nim [] = Nil 
+genGT nim (m:ms) = 
+    case turn nim m of
+        Nothing -> genGT nim ms
+        Just n' -> Node (m, solve n') (genGT nim ms)

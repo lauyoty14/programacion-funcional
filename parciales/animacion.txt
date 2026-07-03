@@ -1,0 +1,202 @@
+data Accion a = Paso a | SaltoArriba a | SaltoAdelante a | Girar a   
+type Tiempo = Int     -- el instante en el que sucede un movimiento   
+type Duracion = Int   -- cantidad de tiempos que dura el movimiento   
+data Animacion a =   
+     Espera Duracion                       -- durante la duración dada no hay acciones   
+   | Mov Duracion (Accion a)               -- un cierto movimiento con una duración dada   
+   | Sec (Animacion a) (Animacion a)       -- secuencia (la 2da empieza al terminar la 1era)   
+   | Par (Animacion a) (Animacion a)       -- paralelo (arrancan juntas y dura lo que la más larga)
+
+type Frame a = [Accion a]     -- acciones simultáneas en un tiempo específico   
+type Simulador a = Tiempo -> Frame a -- función que da las acciones que ocurren en un tiempo dado 
+
+ejercicio 1) 
+combinarSinDuplicados :: [Int] -> [Int] -> [Int]
+combinarSinDuplicados [] ys = ys
+combinarSinDuplicados xs [] = xs
+combinarSinDuplicados (x:xs) (y:ys) = 
+  if x == y
+    then x : (combinarSinDuplicados xs ys)
+    else if x < y 
+            then x : (combinarSinDuplicados xs (y:ys))
+            else y : (combinarSinDuplicados (x:xs) ys)
+
+ejercicio 2)
+a)
+duracion :: Animacion a -> Int
+duracion (Espera d) = d
+duracion (Mov d ac) = d 
+duracion (Sec ani1 ani2) = duracion ani1 + duracion ani2
+duracion (Par ani1 ani2) = max (duracion ani1) (duracion ani2)
+b)
+alargar :: Int -> Animacion a -> Animacion a
+alargar i (Espera d) = Espera (i * d)
+alargar i (Mov d ac) = Mov (i * d) ac
+alargar i (Sec ani1 ani2) = Sec (alargar i ani1) (alargar i ani2)
+alargar i (Par ani1 ani2) = Par (alargar i ani1) (alargar i ani2)
+c)
+simular :: Animacion a -> [Frame a]
+simular (Espera d) = replicate d []
+simular (Mov d ac) = replicate d [ac]
+simular (Sec ani1 ani2) = (simular ani1) ++ (simular ani2)
+simular (Par ani1 ani2) = simularPar (simular ani1) (simular ani2)
+
+simularPar :: [Frame a] -> [Frame a] -> [Frame a]
+simularPar [] fs = fs
+simularPar fs [] = fs
+simularPar (f1:fs1) (f2:fs2) = (f1 ++ f2) : (simularPar fs1 fs2)
+d)
+tiemposDeEspera :: Animacion a -> [Tiempo]
+tiemposDeEspera (Espera d) = contarHasta d 
+tiemposDeEspera (Mov d ac) = []
+tiemposDeEspera (Sec ani1 ani2) = tiemposDeEspera ani1 ++ (map (+ (duracion ani1)) tiemposDeEspera ani2)
+tiemposDeEspera (Par ani1 ani2) = combinarSinDuplicados (tiemposDeEspera ani1) (tiemposDeEspera ani2)
+
+contarHasta :: Int -> [Int]
+contarHasta 0 = []
+contarHasta n = contarHasta (n - 1) ++ [n]
+
+ejercicio 3)
+prop: para todo k >= 0.  duracion . (alargar k) = (k*) . duracion ?
+dem: por ppio de ext y def (.)
+para toda ani :: Animacion a. para todo k >= 0.  duracion ((alargar k) ani) = (k*) (duracion ani) ? 
+sea a una animacion cualquiera, x un numero cualquiera mayor o igual a 0, quiero ver que : 
+duracion ((alargar x) a) = (x*) (duracion a) ?
+por induccion estructural sobre a: 
+caso base.1) duracion ((alargar x) (Espera d)) = (x*) (duracion (Espera d)) ?
+caso base.2) duracion ((alargar x) (Mov d ac)) = (x*) (duracion (Mov d ac)) ?
+caso ind.1)
+  Hi.1) duracion ((alargar x) ani1) = (x*) (duracion ani1) !
+  Hi.2) duracion ((alargar x) ani2) = (x*) (duracion ani2) !
+  Te) duracion ((alargar x) (Sec ani1 ani2)) = (x*) (duracion (Sec ani1 ani2)) ?
+caso ind.2)
+  Hi.1) duracion ((alargar x) ani1) = (x*) (duracion ani1) !
+  Hi.2) duracion ((alargar x) ani2) = (x*) (duracion ani2) !
+  Te) duracion ((alargar x) (Par ani1 ani2)) = (x*) (duracion (Par ani1 ani2)) ?
+
+dem caso base.1) 
+Izd:
+  duracion ((alargar x) (Espera d))
+  =                                                                                           (def alargar.1)
+  duracion (Espera (x * d))
+  =                                                                                           (def duracion.1)
+  (x * d)
+
+Der:
+  (x*) (duracion (Espera d))
+  =                                                                                           (def duracion.1)
+  (x*) d
+  =                                                                                                 (def (x*))
+  x * d
+
+dem caso base.2)
+Izd:
+  duracion ((alargar x) (Mov d ac))
+  =                                                                                              (def alargar.2)
+  duracion (Mov (x * d) ac)
+  =                                                                                             (def duracion.2)
+  (x * d)
+
+Der:
+  (x*) (duracion (Mov d ac))
+  =                                                                                             (def duracion.2)
+  (x*) d 
+  =                                                                                                 (def (x*))
+  x * d
+
+dem caso ind.1)
+Izd:
+  duracion ((alargar x) (Sec ani1 ani2))
+  =                                                                                               (def alargar.3)
+  duracion (Sec (alargar x ani1) (alargar x ani2))
+  =                                                                                              (def duracion.3)
+  duracion (alargar x ani1) + duracion (alargar x ani2)
+  =                                                                                         (por hipotesis 1 y 2)
+  (x*) (duracion ani1) + (x*) (duracion ani2)
+
+Der:
+  (x*) (duracion (Sec ani1 ani2))
+  =                                                                                               (def duracion.3)
+  (x*) (duracion ani1 + duracion an2)
+  =                                                                               (por distributiva del producto)
+  (x*) (duracion ani1) + (x*) (duracion ani2)
+
+dem caso ind.2)
+Izd:
+  duracion ((alargar x) (Par ani1 ani2))
+  =                                                                                               (def alargar.4)
+  duracion (Par (alargar x ani1) (alargar x ani2))
+  =                                                                                              (def duracion.4)
+  max (duracion (alargar x ani1)) (duracion (alargar x ani2))
+  =                                                                                         (por hipotesis 1 y 2)
+  max ((x*) (duracion ani1)) ((x*) (duracion ani2))
+  =                                             (por lema, max (n * e1) (n * e2) = n * (max e1 e2) ya que n >= 0)
+  (x*) (max (duracion ani1) (duracion ani2))
+Der:
+  (x*) (duracion (Par ani1 ani2))
+  =                                                                                             (def duracion.4)
+  (x*) (max (duracion ani1) (duracion ani2))
+
+ejercicio 4)
+foldAni :: (Duracion -> b) -> (Duracion -> Accion a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Animacion a -> b 
+foldAni fe _ _ _ (Espera d) = fe d 
+foldAni _ fm _ _ (Mov d ac) = fm d ac
+foldAni fe fm fs fp (Sec ani1 ani2) = fs (foldAni fe fm fs fp ani1) (foldAni fe fm fs fp ani2)
+foldAni fe fm fs fp (Par ani1 ani2) = fp (foldAni fe fm fs fp ani1) (foldAni fe fm fs fp ani2)
+
+recAni :: (Duracion -> b) -> (Duracion -> Accion a -> b) -> (b -> Animacion a -> b -> Animacion a -> b) ->
+(b -> Animacion a -> b -> Animacion a -> b) -> Animacion a -> b
+recAni fe _ _ _ (Espera d) = fe d 
+recAni _ fm _ _ (Mov d ac) = fm d ac
+recAni fe fm fs fp (Sec ani1 ani2) = fs (recAni fe fm fs fp ani1) ani1 (recAni fe fm fs fp ani2) ani2
+recAni fe fm fs fp (Par ani1 ani2) = fp (recAni fe fm fs fp ani1) ani1 (recAni fe fm fs fp ani2) ani2
+
+ejercicio 5)
+a)
+duracion :: Animacion a -> Int
+duracion = foldAni id const (+) max
+b)
+alargar :: Int -> Animacion a -> Animacion a
+alargar = flip (foldAni (\d i -> Espera (i * d)) (\d ac i -> Mov (i * d) ac) 
+(\ani1 ani2 i -> Sec (ani1 i) (ani2 i)) (\ani1 ani2 i -> Par (ani1 i) (ani2 i)))
+c)
+simular :: Animacion a -> [Frame a]
+simular = foldAni (\d -> replicate d []) (\d ac -> replicate d [ac]) 
+(\ani1 ani2 -> ani1 ++ ani2) (\ani1 ani2 -> simularPar ani1 ani2)
+d)
+tiemposDeEspera :: Animacion a -> [Tiempo]
+tiemposDeEspera = recAni 
+(\d -> contarHasta d) 
+(\d ac -> []) 
+(\t1 ani1 t2 ani2 -> t1 ++ (map (+ (duracion ani1)) t2)) 
+(\t1 ani1 t2 ani2 -> combinarSinDuplicados t1 t2)
+
+ejercicio 6)
+a)
+ciclar :: Animacion a -> Simulador a
+ciclar ani = \t -> let d = duracion ani in 
+                    simularFinito ani (((t - 1) mod d) + 1)
+
+
+simularFinito :: Animacion a -> Simulador a 
+simularFinito = recAni
+(\d t -> [])
+(\d ac t -> [ac])
+(\simu1 ani1 simu2 ani2 t -> let durAni1 = duracion ani1 in
+                              if durAni1 >= t 
+                                then simu1 t 
+                                else simu2 (t - durAni1))
+(\simu1 ani1 simu2 ani2 t -> simu1 t ++ simu2 t)
+b)
+combinar :: [Animacion a] -> [Animacion a] -> Animacion a
+combinar = foldr  
+(\ani1 aniF as -> 
+  case as of 
+    [] -> Espera 0               
+    (ani2:ani2s) -> Sec (Par ani1 ani2) (aniF asni2s)) 
+(const (Espera 0))
+c)
+mezclar :: [Simulador a] -> Duracion -> [Frame a]
+mezclar = foldr 
+(\s fs d -> zipWith (++) (map s (contarHasta d))) (fs d) 
+(\d -> replicate d [])
