@@ -1,0 +1,142 @@
+prop : ¿ Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i ?
+dem : por ppio de ext. es equivalente a 
+	Para todo red :: Red. Para todo i :: Ataque, (intensidadRestante i . combinarFirewalls) red = (intensidadRestante i) red ?
+por def de (.) es equivalente a:
+	Para todo red :: Red. Para todo i :: Ataque, (intensidadRestante i (combinarFirewalls red)  = (intensidadRestante i) red ?
+
+sea r una red cualquiera y a un ataque cualquiera. 
+intensidadRestante a (combinarFirewalls r) = (intensidadRestante a) r ?
+
+por induccion estructural sobre r: 
+
+caso base) 
+  ¿para todo a. 
+    intensidadRestante a (combinarFirewalls (Terminal p)) = intensidadRestante a (Terminal p) ?
+
+caso ind.1) 
+    Hi) ¡para todo a.
+         intensidadRestante a (combinarFirewalls r) = intensidadRestante a r !
+    Te) ¿ para todo a. 
+         intensidadRestante a (combinarFirewalls (Servidor p r)) = intensidadRestante a (Servidor p r) ?
+
+caso ind.2)
+    Hi) ¡para todo a. 
+          intensidadRestante a (combinarFirewalls r) = intensidadRestante a r !
+    Te)  ¿ para todo a. 
+          intensidadRestante a (combinarFirewalls (Firewall f r)) = intensidadRestante a (Firewall f r) ?
+
+caso ind.3)
+    Hi.1) ¡para todo a. 
+          intensidadRestante a (combinarFirewalls r) = intensidadRestante a rI !
+    Hi.2) ¡para todo a. 
+          intensidadRestante a (combinarFirewalls r) = intensidadRestante a rD !
+    Te.) ¿ para todo a.
+          intensidadRestante a (combinarFirewalls (Firewall f r)) = intensidadRestante a (Switch f rI rD) 
+
+lema 1) ¡para todo x. para todo f. para todo r.
+			intensidadRestante x (juntarFirewalls f r) = intensidadRestante x (Firewall f r) !
+
+dem caso base) 
+intensidadRestante a (combinarFirewalls (Terminal p))
+=                                                                                       (combinarFirewalls.1)
+intensidadRestante a (Terminal p)
+=                                                                                      (intensidadRestante.1)
+Just (a - p)
+=                                                                                      (intensidadRestante.1)
+intensidadRestante a (Terminal p)
+
+dem caso ind.1)
+intensidadRestante a (combinarFirewalls (Servidor p r)) 
+=                                                                                       ( combinarFirewalls.2)
+intensidadRestante a (Servidor p (combinarFirewalls r))
+=                                                                                      ( intensidadRestante.2)
+intensidadRestante (a + p) (combinarFirewalls r)
+=                                                                                        (por Hi con a' = a + p)
+intensidadRestante (a + p) r 
+=                                                                                        ( intensidadRestante.2)
+intensidadRestante a (Servidor p r)
+
+dem caso ind.2)
+LADO IZQUIERDO: 
+	intensidadRestante a (combinarFirewalls (Firewall f r))
+	= 																						(combinarFirewalls.3)
+	intensidadRestante a (juntarFirewalls f (combinarFirewalls r))
+	= 																					          (por lema 1)
+	intensidadRestante a (Firewall f (combinarFirewalls r))
+	= 																						(intensidadRestante.3)
+	if f n
+	   then intensidadRestante n (combinarFirewalls r)
+	   else Nothing
+	= 													(por Hi)
+	if f n
+	   then intensidadRestante n r
+	   else Nothing
+
+LADO DER:
+	intensidadRestante a (Firewall f r) 
+	= 																						(intensidadRestante.3)
+	if f n
+	   then intensidadRestante n r
+	   else Nothing
+	
+
+como ambos lados devuelven lo mismo en ambos casos, y cada caso inductivo es equivalente, la prop se cumple!
+
+-----------------------------------------------------------------------------------------------------------------
+prop: ¿ para todo x. para todo f. para todo r.
+			intensidadRestante x (juntarFirewalls f r) = intensidadRestante x (Firewall f r) ? 
+dem: sea fb una funcion cualquiera, sea re una red cualquiera y a un ataque cualquiera. 
+	¿ intensidadRestante a (juntarFirewalls fb re) = intensidadRestante a (Firewall fb re) ?
+
+Ayuda 2) ¿ Para todo b1, b2, e1, e2. 
+			if b1 then (if b2 then e1 else e2) else e2 = if b1 && b2 then e1 else e2 ?
+
+
+por planteo de casos: 
+
+caso.1 re = Firewall f2 re) 
+	¿ intensidadRestante a (juntarFirewalls fb Firewall f2 re) = 
+		intensidadRestante a (Firewall fb (Firewall f2 re)) ?
+
+caso.2 re = red)
+	¿ intensidadRestante a (juntarFirewalls fb red) = intensidadRestante a (Firewall fb red) ?
+	
+dem caso.1)
+LADO IZQ
+  intensidadRestante a (juntarFirewalls fb (Firewall f2 re))
+= 															(juntarFirewalls.1)
+  intensidadRestante a (Firewall (\a -> fb1 a && f2 a) re)
+= 															(intensidadRestante.3)
+  if (\a -> fb1 a && f2 a) a
+	   then intensidadRestante a re
+	   else Nothing
+= 															(Beta reducción)
+  if fb1 a && f2 a
+	   then intensidadRestante a re
+	   else Nothing
+  
+LADO DER
+  intensidadRestante a (Firewall fb (Firewall f2 re))
+    if fb a
+	   then intensidadRestante a (Firewall f2 re) 
+	   else Nothing
+=                                                (intensidadRestante.3)
+    if fb a
+	   then if f2 a
+			   then intensidadRestante a re 
+	   		   else Nothing
+	   else Nothing
+= 											(por Ayuda 2)
+    if fb a && f2 a
+	   then intensidadRestante a re 
+	   else Nothing
+
+dem caso.2)
+LADO IZQ
+  intensidadRestante a (juntarFirewalls fb red)
+= 											  (juntarFirewalls.2)
+  itensidadRestante a (Firewall fb red)
+
+LADO DER
+  itensidadRestante a (Firewall fb red)
+

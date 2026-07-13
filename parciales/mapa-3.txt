@@ -1,0 +1,227 @@
+data Dir = Left | Right | Straight
+data Mapa a = Cofre [a] | Nada (Mapa a) | Bifurcacion [a] (Mapa a) (Mapa a)
+
+ejercicio 1)
+a)
+objects :: Mapa a -> [a]
+objects (Cofre as) = as
+objects (Nada m) = objects m
+objects (Bifurcacion as mapI mapD) = as ++ (objects mapI) ++ (objects mapD)
+b)
+mapM :: (a -> b) -> Mapa a -> Mapa b
+mapM f (Cofre as) = Cofre (map f as)
+mapM f (Nada m)   = Nada (mapM f m)
+mapM f (Bifurcacion as mapI mapD) = Bifurcacion (map f as) (mapM f mapI) (mapM f mapD)
+c)
+hasObjectAt :: (a -> Bool) -> Mapa a -> [Dir] -> Bool
+hasObjectAt f (Cofre as) dir = 
+    case dir of 
+        [] -> any f as
+        (d:ds) -> error "camino invalido"
+hasObjectAt f (Nada m) dir =
+    case dir of 
+        [] -> error "camino invalido"
+        (d:ds) -> case d of 
+                    Straight -> hasObjectAt f m ds
+                    _ -> error "camino invalido"
+hasObjectAt f (Bifurcacion as mapI mapD) dir = 
+    case dir of 
+        [] -> any f as
+        (d:ds) -> case d of 
+                    Left -> hasObjectAt f mapI ds
+                    Right -> hasObjectAt f mapD ds 
+                    _ -> error "camino invalido"
+d)
+longestPath :: Mapa a -> [Dir]
+longestPath m = snd (longesPathTuples m)
+
+longesPathTuples :: Mapa a -> (Int, [Dir])
+longesPathTuples (Cofre _) = (0, [])
+longesPathTuples (Nada m)  = 
+    let (longitud, dir) = longesPathTuples m in (longitud + 1 , Straight : dir)
+longesPathTuples (Bifurcacion _ mapI mapD) = 
+    let (longitudI, dirI) = longesPathTuples mapI
+        (longitudD, dirD) = longesPathTuples mapD in
+    if longitudI > longitudD 
+        then (longitudI + 1 , Left : dirI)
+        else (longitudD + 1 , Right : dirD) 
+e)
+objectsOfLongestPath :: Mapa a -> [a]
+objectsOfLongestPath m = snd (objectsOfLongestPathTuples m)
+
+objectsOfLongestPathTuples :: Mapa a -> (Int, [a])
+objectsOfLongestPathTuples (Cofre as) = (0, as)
+objectsOfLongestPathTuples (Nada m)   = 
+    let (longitud , objects) = objectsOfLongestPathTuples m in (longitud + 1 , objects)
+objectsOfLongestPathTuples (Bifurcacion as mapI mapD) = 
+    let (longitudI , objectsI) = objectsOfLongestPathTuples mapI
+        (longitudD , objectsD) = objectsOfLongestPathTuples mapD in
+    if longitudI > longitudD 
+        then (longitudI + 1 , as ++ objectsI) 
+        else (longitudD + 1 , as ++ objectsD)
+f)
+allPaths :: Mapa a -> [[Dir]]
+allPaths (Cofre _) = [[]]
+allPaths (Nada m)  = map (Straight:) (allPaths m)
+allPaths (Bifurcacion _ mapI mapD) = (map (Left:) (allPaths mapI)) ++ (map (Right:) (allPaths mapD))
+
+ejercicio 2)
+foldM :: ([a] -> b) -> (b -> b) -> ([a] -> b -> b -> b) -> Mapa a -> b
+foldM fc _ _ (Cofre as) = fc as
+foldM fc fn fb (Nada m) = fn (foldM fc fn fb m)
+foldM fc fn fb (Bifurcacion as mapI mapD) = fb as (foldM fc fn fb mapI) (foldM fc fn fb mapD)
+
+recM :: ([a] -> b) -> (Mapa a -> b -> b) -> ([a] -> Mapa a -> b -> Mapa a -> b -> b) -> Mapa a -> b
+recM fc _ _ (Cofre as) = fc as
+recM fc fn fb (Nada m) = fn m (recM fc fn fb m)
+recM fc fn fb (Bifurcacion as mapI mapD) = fb as mapI (recM fc fn fb mapI) mapD (recM fc fn fb mapD)
+
+ejercicio 3)
+a)
+objects :: Mapa a -> [a]
+objects = foldM id id (\as objI objD -> as ++ objI ++ objD)
+b)
+mapM :: (a -> b) -> Mapa a -> Mapa b
+mapM = flip (foldM cofre nada bifur) 
+where 
+    cofre as f = Cofre (map f as)
+    nada m f = Nada (m f)
+    bifur as mapI mapD f = Bifurcacion (map f as) (mapI f) (mapD f) 
+c)
+hasObjectAt :: (a -> Bool) -> Mapa a -> [Dir] -> Bool
+hasObjectAt = flip (foldM cofre nada bifur) where
+cofre as f dir = case dir of
+                    [] -> any f as 
+                    (d:ds) -> error "camino invalido"
+nada m f dir = case dir of 
+                    [] -> error "camino invalido"
+                    (d:ds) -> case d of 
+                                Straight -> m f ds
+                                _ -> error "camino invalido"
+bifur as hasI hasD f dir = case dir of 
+                                [] -> any f as
+                                (d:ds) -> case d of 
+                                            Left -> hasI f ds
+                                            Right -> hasD f ds 
+                                            _ -> error "camino invalido"
+d)
+longestPath :: Mapa a -> [Dir]
+longestPath = snd . longesPathTuples
+
+longesPathTuples :: Mapa a -> (Int, [Dir])
+longesPathTuples = foldM cofre nada bifur where 
+    cofre _ = (0,[])
+    nada m  = let (longitud, dir) = m in (longitud + 1 , Straight : dir)
+    bifur _ tupI tupD = 
+        let (longitudI, dirI) = tupI
+            (longitudD, dirD) = tupD in
+        if longitudI > longitudD 
+            then (longitudI + 1 , Left : dirI)
+            else (longitudD + 1 , Right : dirD) 
+e)
+objectsOfLongestPath :: Mapa a -> [a]
+objectsOfLongestPath m = snd (objectsOfLongestPathTuples m)
+
+objectsOfLongestPathTuples :: Mapa a -> (Int, [a])
+objectsOfLongestPathTuples = foldM cofre nada bifur where 
+    cofre as = (0,as)
+    nada rec = let (longitud , objects) = rec in (longitud + 1 , objects)
+    bifur as tupI tupD = 
+        let (longitudI, dirI) = tupI
+            (longitudD, dirD) = tupD in
+        if longitudI > longitudD 
+            then (longitudI + 1 , Left : dirI)
+            else (longitudD + 1 , Right : dirD) 
+f)
+allPaths :: Mapa a -> [[Dir]]
+allPaths = foldM cofre nada bifur where
+cofre _ = [[]]
+nada m  = map (Straight:) m
+bifur _ dirI dirD = (map (Left:) dirI) ++ (map (Right:) dirD)
+
+ejercicio 4)
+a) prop : length . objects = countObjects ?
+dem: por ppio de ext. es equivalente a:
+length . objects map = countObjects map ?
+por def de (.) es equivalente a: 
+length (objects map) = countObjects map ?
+por induccion estructural sobre map: 
+caso base) length (objects (Cofre xs)) = countObjects (Cofre xs) ?
+caso ind.1) 
+    Hi) length (objects m) = countObjects m !
+    Te) length (objects (Nada m)) = countObjects (Nada m) ?
+caso ind.2)
+    Hi.1) length (objects mapI) = countObjects mapI !
+    Hi.2) length (objects mapD) = countObjects mapD !
+    Te) length (objects (Bifurcacion xs mapI mapD)) = countObjects (Bifurcacion xs mapI mapD) ?
+lema 1) 
+para todo xs, ys y zs. length (xs ++ ys ++ zs) = length xs + length ys + length zs
+
+caso base)
+Izd:
+    length (objects (Cofre xs))
+    =                                                                                            (def objects.1) 
+    length xs
+Der:
+    countObjects (Cofre xs)
+    =                                                                                        (def countObjects.1)
+    length xs
+
+caso ind.1)
+Izd:
+    length (objects (Nada m))
+    =                                                                                            (def objects.2)
+    length (objects m)
+    =                                                                                            (por hipotesis)
+    countObjects m
+Der:
+    countObjects (Nada m)
+    =                                                                                        (def countObjects.2)
+    countObjects m
+
+caso ind.2)
+Izd:
+    length (objects (Bifurcacion xs mapI mapD))
+    =                                                                                             (def objects.3)
+    length (xs ++ (objects mapI) ++ (objects mapD))
+    =                                                                                                (por lema 1)
+    length xs + lenght (objects mapI) + lenght (objects mapD)
+    =                                                                                             (por hipotesis)
+    length xs + countObjects mapI + countObjects mapD
+Der:
+    countObjects (Bifurcacion xs mapI mapD)
+    =                                                                                       (def countObjects.3)
+    length xs + countObjects mapI + countObjects mapD 
+
+lema 1) prop: para todo xs, ys y zs. length (xs ++ ys ++ zs) = length xs + length ys + length zs ?
+dem: por induccion estructural sobre xs: 
+caso base) length ([] ++ ys ++ zs) = length [] + length ys + length zs ?
+caso ind) 
+    hi) length (xs ++ ys ++ zs) = length xs + length ys + length zs !
+    te) length length ((x:xs) ++ ys ++ zs) = length (x:xs) + length ys + length zs ?
+
+dem caso base)
+Izd:
+    length ([] ++ ys ++ zs) 
+    =                                                                                                 (def ++.1)
+    length (ys ++ zs)
+    =                                                       (por lema, length (xs ++ ys) = length xs + length ys)
+    length ys + length zs
+Der:
+    length [] + length ys + length zs
+    =                                                                                              (def length.1)
+    0 + length ys + length zs
+    =                                                                                            (por aritmetica)
+    length ys + length zs
+----------------------------------------------------------------------------------------------------------------
+b) prop: elem x . objects = hasObject (==x) ?
+dem: por ppio de ext. es equivalente a : 
+    para todo ma :: Mapa a. elem x . objects ma = hasObject (==x) ma ?
+por def de (.) es equivalente a : 
+    elem x (objects ma) = hasObject (==x) ma
+sea m un Mapa a cualquiera : 
+    elem x (objects m) = hasObject (==x) m
+por induccion estructural sobre m:
+caso base) elem x (objects (Cofre xs)) = hasObject (==x) (Cofre xs)
+ 
+    

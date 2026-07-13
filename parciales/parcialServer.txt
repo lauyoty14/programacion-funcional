@@ -124,6 +124,8 @@ foldRed ft fsrv ffr fstw (Switch fd ri rd) =
 	fstw fd (foldRed ft fsrv ffr fstw ri)
 	        (foldRed ft fsrv ffr fstw rd)
 
+-----------------------------------------------------------------------------------------------
+
 recRed :: (Potencia -> b) 
 	-> (Potencia -> Red -> b -> b) 
 	-> ((Ataque -> Bool) -> Red -> b -> b)
@@ -139,7 +141,11 @@ recRed ft fsrv ffr fstw (Firewall fb r) =
 recRed ft fsrv ffr fstw (Switch fd ri rd) =
 	fstw fd ri rd (recRed ft fsrv ffr fstw ri) (recRed ft fsrv ffr fstw rd)
 
+-----------------------------------------------------------------------------------------------
+
 combinarFirewalls' = foldRed Terminal Servidor juntarFirewalls Switch
+
+-----------------------------------------------------------------------------------------------
 
 intensidadRestante' n red = foldRed ft fsrv ffr fstw red n
 	where ft x n' = Just (n' - x)
@@ -155,6 +161,57 @@ intensidadRestante' n red = foldRed ft fsrv ffr fstw red n
 	      	                      	          Nothing  -> Nothing
 	      	                      	          Just n'' -> fmd n''
 
+-----------------------------------------------------------------------------------------------
+
+pasosHastaBloqueo :: Ataque -> Red -> Maybe Int
+pasosHastaBloqueo n r = 
+	case pasosRec n r of
+		(n, Nothing) -> Just n
+		(_, _)       -> Nothing
+
+pasosRec :: Ataque -> Red -> (Int, Maybe Ataque)
+pasosRec = flip (foldRed ft fsrv ffr fstw)
+    where ft p = \a -> (1 , Just (a - p))
+          fsrv p hr = \a -> applyFst (+1) (hr (a + p))
+          ffr hf hr = \a -> if hf a 
+                                then applyFst (+1) (hr a)
+                                else (0, Nothing)
+          fstw hs hrI hrD = \a -> 
+                                case hs a of 
+                                    Der -> case (hrD a) of 
+                                            (pasosD, Nothing) -> (pasosD + 1, Nothing)
+                                            (pasosD, Just a') -> let (pasosI, n) = hrI a'
+                                                                in (pasosI + pasosD + 1, n)
+                                    _ -> case (hrI a) of
+                                            (pasosI, Nothing) -> (pasosI + 1, Nothing)
+                                            (pasosI, Just a') -> let (pasosD, n) = hrD a'
+                                                                    in (pasosI + pasosD + 1, n)
+
+-----------------------------------------------------------------------------------------------
+
+rutasAServidores :: Ataque -> Red -> [Ruta]
+rutasAServidores n r = fst (rutasRec n r)
+
+rutasRec :: Ataque -> Red -> ([Ruta], Maybe Ataque)
+rutasRec = flip (foldRed ft fsrv ffr fstw)
+	where ft p = \a -> ([] , Just (a - p))
+		fsrv p par = \a -> let (rutas , m) = par (a + p) 
+						in ([] : (map (Forward :) rutas) , m)
+		ffr fb par = \a -> if fb a
+							then let (rutas, m) = par a 
+									in (map (Forward :) rutas, m)
+							else ([], Nothing)
+		fstw fd parI parD = \a ->  
+							case fd a of
+								Der -> case parD a of
+									(rutasD, Nothing) -> (map (Der :) rutasD, Nothing)
+									(rutasD, Just a') -> let (rutasI, m) = parI a'
+															in (map (Der :) rutasD ++ map (Izq :) rutasI, m)
+								_   -> case parI a of
+											(rutasI, Nothing) -> (map (Izq :) rutasI, Nothing)
+											(rutasI, Just a') -> let (rutasD, m) = parD a'
+																	in (map (Izq :) rutasI ++ map (Der :) rutasD, m)
+
 -- EJERCICIO 2: Demostrar la siguiente propiedad.
 
 Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i
@@ -165,7 +222,7 @@ Ayuda 2. Considerar la siguiente propiedad ya demostrada:
 Para todo b1, b2, e1, e2. if b1 then (if b2 then e1 else e2) else e2 = if b1 && b2 then e1 else e2
 
 prop : Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i ?
-dem : por ppio de ext y por def (.). es equivalente a 
+dem : por ppio de ext y por def (	.). es equivalente a 
 Para todo red :: Red. Para todo i :: Ataque, 
 intensidadRestante i (combinarFirewalls red) = intensidadRestante i red ?
 sea r una red cualquiera y a un ataque cualquiera. 

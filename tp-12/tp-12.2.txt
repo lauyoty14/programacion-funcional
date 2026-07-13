@@ -1,0 +1,424 @@
+ejercicio 1)
+data ExpA  = Cte Int     
+    | Suma ExpA ExpA     
+    | Prod ExpA ExpA
+
+a)
+foldExpA :: (Int -> b) -> (b -> b -> b) -> (b -> b -> b) -> ExpA -> b
+foldExpA fc fs fp (Cte n) = fc n
+foldExpA fc fs fp (Suma e1 e2) = fs (foldExpA fc fs fp e1) (foldExpA fc fs fp e2)
+foldExpA fc fs fp (Prod e1 e2) = fp (foldExpA fc fs fp e1) (foldExpA fc fs fp e2)
+
+b) i)
+cantidadDeCeros :: ExpA -> Int
+cantidadDeCeros = foldExpA (\n -> if n == 0 then 1 else 0) (+) (+)
+
+ii)
+noTieneNegativosExplicitosExpA  ::  ExpA  ->  Bool
+noTieneNegativosExplicitosExpA = foldExpA (>=0) (&&) (&&)
+
+iii)
+simplificarExpA'  ::  ExpA  ->  ExpA
+simplificarExpA' = foldExpA (Cte) (simplificarSuma) (simplificarProd)
+
+simplificarSuma :: ExpA -> ExpA -> ExpA
+simplificarSuma (Cte 0) e2 = e2
+simplificarSuma e1 (Cte 0) = e1
+simplificarSuma e1 e2 = Suma e1 e2
+
+simplificarProd :: ExpA -> ExpA -> ExpA
+simplificarProd (Cte 1) e2 = e2
+simplificarProd e1 (Cte 1) = e1
+simplificarProd (Cte 0) e2 = Cte 0
+simplificarProd e1 (Cte 0) = Cte 0
+simplificarProd e1 e2 = Prod e1 e2
+
+iv)
+evalExpA' :: ExpA -> Int
+evalExpA' = foldExpA (id) (+) (*)
+
+v)
+showExpA  ::  ExpA  ->  String
+showExpA = foldExpA 
+    (show) 
+    (\s1 s2 -> "(" ++ s1 ++ "+" ++ s2 ++ ")") 
+    (\s1 s2 -> "(" ++ s1 ++ "*" ++ s2 ++ ")")
+
+----------------------------------------------------------------------------------------------------------------
+
+c) prop: ¿ evalExpA' = evalExpA ? 
+dem: por ppio de ext. es equivalente a 
+    ¿ Para todo exp :: ExpA. ¿ evalExpA' exp = evalExpA exp ?
+
+sea e un ExpA cualquiera, Qvq : 
+    ¿ evalExpA' e = evalExpA e ?
+
+por induccion estructural sobre e : 
+
+caso base)
+    ¿ evalExpA' (Cte i) = evalExpA (Cte i) ?
+
+caso ind.1)
+    Hi.1) ¡evalExpA' e1 = evalExpA e1 !
+    Hi.2) ¡evalExpA' e2 = evalExpA e2 !
+    Te) ¿ evalExpA' (Suma e1 e2) = evalExpA (Suma e1 e2) ?
+
+caso ind.2)
+    Hi.1) ¡evalExpA' e1 = evalExpA e1 !
+    Hi.2) ¡evalExpA' e2 = evalExpA e2 !
+    Te) ¿ evalExpA' (Prod e1 e2) = evalExpA (Prod e1 e2) ?
+    
+dem caso base)
+LADO IZQ:
+    evalExpA' (Cte i)
+    =                                           (evalExpa'.1)
+    foldExpA (id) (+) (*) (Cte i)
+    =                                           (foldExpA.1)
+    (id) i
+    =                                           (id)
+    i
+
+LADO DER:
+    evalExpA (Cte i) 
+    =                                           (evalExpA.1)
+    i
+    
+dem caso ind.1)
+LADO IZQ: 
+    evalExpA' (Suma e1 e2)
+    =                                           (evalExpa'.1)
+    foldExpA (id) (+) (*) (Suma e1 e2)
+    =                                           (foldExpA.1)
+    (+) (foldExpA (id) (+) (*) e1) (foldExpA (id) (+) (*) e2)
+    =                                           (foldExpA)
+    (+) (evalExpA' e1) (evalExpA' e2)
+    =                                           (+)
+    evalExpA' e1 + evalExpA' e2
+    =                                           (por Hi.1 y Hi.2)
+    evalExpA e1 + evalExpA e2
+    
+LADO DER:
+    evalExpA (Suma e1 e2)
+    =                                           (evalExpA.2)
+    evalExpA e1 + evalExpA e2
+    
+dem caso ind.2)
+LADO IZQ: 
+    evalExpA' (Prod e1 e2) 
+    =                                           (evalExpA'.1)
+    foldExpA (id) (+) (*) (Prod e1 e2)
+    =                                           (foldExpA.3)
+    (*) (foldExpA (id) (+) (*) e1) (foldExpA (id) (+) (*) e2)
+    =                                           (foldExpA)
+    (*) (evalExpA' e1) (evalExpA' e2)
+    =                                           (*)
+    evalExpA' e1 * evalExpA' e2
+    =                                           (por Hi.1 y Hi.2)
+    evalExpA e1 * evalExpA e2
+
+LADO DER:
+    evalExpA (Prod e1 e2)
+    =                                           (evalExpA.3)
+    evalExpA e1 * evalExpA e2
+
+----------------------------------------------------------------------------------------------------------------
+
+d)
+rectExpA :: (Int -> b) -> (ExpA -> ExpA -> b -> b -> b) -> (ExpA -> ExpA -> b -> b -> b) -> ExpA -> b
+rectExpA c s p (Cte i)      = c i
+rectExpA c s p (Suma e1 e2) = s e1 e2 (rectExpA c s p e1) (rectExpA c s p e2)
+rectExpA c s p (Prod e1 e2) = p e1 e2 (rectExpA c s p e1) (rectExpA c s p e2)
+
+e) i)
+cantDeSumaCeros :: ExpA -> Int
+cantDeSumaCeros = recExpA (const 0) 
+    (\e1 e2 cant1 cant2 -> case e1 of 
+                            (Cte 0) -> 1 + cant1 + cant2
+                            _ -> case e2 of 
+                                    (Cte 0) -> 1 + cant1 + cant2
+                                    _ -> cant1 + cant2)
+    (\e1 e2 cant1 cant2 -> cant1 + cant2)
+
+ii)
+cantDeProdUnos :: ExpA -> Int
+cantDeProdUnos = recExpA (const 0) 
+    (\e1 e2 cant1 cant2 -> cant1 + cant2)
+    (\e1 e2 cant1 cant2 -> case e1 of 
+                            (Cte 1) -> 1 + cant1 + cant2
+                            _ -> case e2 of 
+                                    (Cte 1) -> 1 + cant1 + cant2
+                                    _ -> cant1 + cant2)
+
+----------------------------------------------------------------------------------------------------------------
+
+ejercicio 2)
+data EA = Const Int | BOp BinOp EA EA      
+data BinOp = Sum | Mul
+
+a)
+foldEA :: (Int -> b) -> (BinOp -> b -> b -> b) -> EA -> b 
+foldEA fc fo (Const i) = fc i 
+foldEA fc fo (BinOp op e1 e2) = fo op (foldEA fc fo e1) (foldEA fc fo e2)
+
+b) i)
+noTieneNegativosExplicitosEA  ::  EA  ->  Bool
+noTieneNegativosExplicitosEA = foldEA (>=0) (\op b1 b2 -> b1 && b2)
+
+ii)
+simplificarEA' :: EA -> EA
+simplificarEA' = foldEA 
+    (Const) 
+    (\op b1 b2 -> case op of 
+                    Sum -> simplificarSum b1 b2 
+                    Mul -> simplificarMul b1 b2)
+
+simplificarSum :: EA -> EA -> EA 
+simplificarSum (Const 0) ea2 = ea2
+simplificarSum ea1 (Const 0) = ea1
+simplificarSum ea1 ea2 = BOp Sum ea1 ea2
+
+simplificarMul :: EA -> EA -> EA 
+simplificarMul (Const 0) ea2 = Const 0
+simplificarMul ea1 (Const 0) = Const 0
+simplificarMul (Const 1) ea2 = ea2
+simplificarMul ea1 (Const 1) = ea1
+simplificarMul ea1 ea2 = BOp Mul ea1 ea2
+
+iii)
+evalEA'  :: EA -> Int
+evalEA' = foldEA 
+    (id)
+    (\op n m -> case op of 
+                    Sum -> n + m 
+                    Mul -> n * m)
+
+iv)
+showEA :: EA -> String
+showEA = foldEA (show)
+                (\op r1 r2 -> case op of
+                                Sum -> "(" ++ r1 ++ "+" ++ r2 ++ ")"
+                                Mul -> "(" ++ r1 ++ "*" ++ r2 ++ ")")
+v)
+ea2ExpA' :: EA -> ExpA
+ea2ExpA' = foldEA (\x -> Cte x)
+                (\op r1 r2 -> case op of
+                                Sum -> Suma r1 r2
+                                Mul -> Prod r1 r2)
+vi)
+ea2Arbol' :: EA -> ABTree BinOp Int
+ea2Arbol' = foldEA (\x -> Leaf x) 
+                   (\op r1 r2 -> Node op r1 r2)
+
+----------------------------------------------------------------------------------------------------------------
+
+ejercicio 3)
+a)
+foldT :: b -> (a -> b -> b -> b) -> Tree a -> b 
+foldT e _ (EmptyT) = e
+foldT e fn (NodeT a treeI treeD) = fn a (foldT e fn treeI) (foldT e fn treeD)
+
+b) i)
+mapT :: (a -> b) -> Tree a -> Tree b
+mapT = flip (foldT 
+                (\f -> EmptyT) 
+                (\a treeI treeD -> \f -> NodeT (f a) (treeI f) (treeD f)))
+
+ii)
+sumT :: Tree Int -> Int
+sumT = foldT (0) (\n sumI sumD -> n + sumI + sumD)
+
+iii)
+sizeT :: Tree a -> Int 
+sizeT = foldT (0) (\a sizeI sizeD -> 1 + sizeI + sizeD)
+
+iv)
+heightT :: Tree a -> Int
+heightT = foldT (0) (\a heightI heightD -> 1 + (max heightI heightD))
+
+v)
+preOrder :: Tree a -> [a]
+preOrder = foldT [] (\a asI asD -> [a] ++ asI ++ asD)
+
+vi)
+inOrder :: Tree a -> [a] 
+inOrder = foldT [] (\a asI asD -> asI ++ [a] ++ asD)
+
+vii)
+postOrder :: Tree a -> [a]
+postOrder = foldT [] (\a asI asD -> asI ++ asD ++ [a])
+
+viii)
+mirrorT :: Tree a -> Tree a 
+mirrorT = foldT (EmptyT) (\a treeI treeD -> NodeT a treeD treeI)
+
+ix)
+countByT :: (a -> Bool) -> Tree a -> Int
+countByT = flip (foldT 
+                    (const 0) 
+                    (\a hrI hrD -> \f -> 
+                                    if f a 
+                                    then 1 + (hrI f) + (hrD f)
+                                    else (hrI f) + (hrD f)))
+
+x)
+partitionT :: (a -> Bool) -> Tree a -> ([a], [a])
+partitionT = flip (foldT 
+                    (\f -> ([] , []))
+                    (\a hrI hrD -> \f ->
+                        let (xs, ys) = (hrI f)
+                            (zs, ws) = (hrD f) in
+                                if f a 
+                                    then (a: (xs ++ zs) , (ys ++ ws))
+                                    else ((xs ++ zs) , (a : (ys ++ ws)))))
+
+xi)
+zipWithT :: (a->b->c) -> Tree a -> Tree b -> Tree c
+zipwithT = flip (foldT 
+                    (\f -> \tree -> EmptyT)
+                    (\a hrI hrD -> \f -> \tree -> 
+                        case tree of 
+                            EmptyT -> EmptyT
+                            NodeT b treeI treeD -> NodeT (f a b) (hrI f treeI) (hrD f treeD)))
+
+xii)
+caminoMasLargo :: Tree a -> [a]
+caminoMasLargo = fst . caminoMasLargoTuple
+
+caminoMasLargoTuple :: Tree a -> ([a] , Int)
+caminoMasLargoTuple = foldT 
+                        ([] , 0)
+                        (\a tupI tupD -> 
+                            let (asI , lenI) = tupI
+                                (asD , lenD) = tupD in
+                                    if lenI > lenD 
+                                        then ((a:asI) , (lenI + 1))
+                                        else ((a:asD) , (lenD + 1)))
+                                
+xiii)
+todosLosCaminos :: Tree a -> [[a]]
+todosLosCaminos = foldT 
+                    []
+                    (\a assI assD ->
+                        if null assI && null assD 
+                            then [a] 
+                            else map (a:) (assI ++ assD))
+
+xiv)
+todosLosNiveles :: Tree a -> [[a]]
+todosLosNiveles = foldT 
+                    []
+                    (\a assI assD -> 
+                        [a] : zipWithLonger (++) assI assD)
+
+zipWithLonger :: (a -> a -> a) -> [a] -> [a] -> [a]
+zipWithLonger = flip (foldr (\x hs -> \f -> \ys ->
+                                case ys of
+                                    []     -> x : hs f []        
+                                    (z:zs) -> f x z : (hs f zs))
+                            (\const id))
+
+xv)
+nivelN :: Tree a -> Int -> [a] 
+nivelN = foldT 
+            (const [])
+            (\a hrI hrD -> \n -> 
+                case n of 
+                    0 -> [a]
+                    n -> (hrI (n - 1)) ++ (hrD (n - 1)))
+
+c)
+recT :: b -> (a -> Tree a -> Tree a -> b -> b -> b) -> Tree a -> b
+recT z f EmptyT          = z
+recT z f (NodeT a ti td) = f a ti td (recT z f ti) (recT z f td)
+
+d) i)
+insertT :: a -> Tree a -> Tree a
+insertT = flip (recT
+                (\b -> NodeT b EmptyT EmptyT)
+                (\a treeI treeD hrI hrD -> \b -> 
+                    if b > a
+                        then NodeT a treeI (hrD b)
+                        else NodeT a (hrI b) treeD))
+
+ii)
+caminoHasta :: Eq a => a -> Tree a -> [a]
+caminoHasta = flip (recT 
+                    (\b -> [])
+                    (\a _ _ hrI hrD -> \b -> 
+                        if b < a 
+                            then a : (hrI b)
+                            else if b > a 
+                                    then a : (hrD b)
+                                    else [b]))
+
+ejercicio 7)
+type Record f v = [(f,v)]
+
+type Table f v = [ Record f v ]
+
+a)
+select :: (Record f v -> Bool) -> Table f v -> Table f v
+select = filter
+
+b)
+project :: (f -> Bool) -> Table f v -> Table f v
+project = flip (foldr 
+                (\r hs -> \f -> 
+                    (filter (f . fst) r) : (hs f)))
+                (const [])
+
+-- Versión ultra-corta
+project :: (f -> Bool) -> Table f v -> Table f v
+project f = map (filter (f . fst))
+
+c)
+conjunct :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+conjunct = \f -> \g -> \a -> f a && g a
+
+d)
+crossWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+crossWith = flip (foldr 
+                    (\x hs -> \f -> \ys ->
+                        (map (f x) ys) ++ (hs f ys))
+                    (\f -> \ys -> []))
+
+e)
+product :: Table f v -> Table f v -> Table f v
+product = crossWith (++)
+
+f)
+similar  ::  Record f v -> Record f v
+similar = foldr (\r rs -> r : filter (/= r) rs) []
+
+--------------------------------------------------------------------------------------------------------------------------
+
+ejercicio 8)
+
+data Query f v 
+   = Table [Record f v]           -- Table (Table f v) 
+   | Product (Query f v) (Query f v) 
+   | Projection (f -> Bool) (Query f v) 
+   | Selection (Record f v -> Bool) (Query f v)
+
+a)
+foldQ :: ([Record f v] -> b) -> (b -> b -> b) -> ((f -> Bool) -> b -> b) -> ((Record f v -> Bool) -> b -> b) -> Query f v -> b
+foldQ ft _ _ _ (Table rs)                = ft rs 
+foldQ ft fprod fproj fs (Product q1 q2)  = fprod (foldQ ft fprod fproj fs q1) (foldQ ft fprod fproj fs q2)
+foldQ ft fprod fproj fs (Projection h q) = fproj h (foldQ ft fprod fproj fs q)
+foldQ ft fprod fproj fs (Selection h q)  = fs h (foldQ ft fprod fproj fs q) 
+
+a) i)
+tables :: Query a b -> [Table a b]
+tables = foldQ 
+            (\rs -> [rs])
+            (\ts1 ts2 -> ts1 ++ ts2)
+            (\ _ tables -> tables)
+            (\ _ tables -> tables)
+
+ii)
+execute :: Query a b -> Table a b
+execute = foldQ (id) (product) (project) (select)
+
+iii)
+compact :: Query a b -> Query a b
+compact = foldQ
