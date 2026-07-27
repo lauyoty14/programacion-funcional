@@ -1,0 +1,396 @@
+type Distancia = Int
+type Peso      = Int
+type Altura    = Int
+
+data Sector
+    = Base Distancia
+    | Trayecto Distancia Sector
+    | Escudo [Altura] Sector
+    | Conexión Peso Sector Sector
+
+ejercicio 1)
+cantidadDeConexiones :: Sector -> Int
+cantidadDeConexiones (Base d) = 0
+cantidadDeConexiones (Trayecto d sec) = cantidadDeConexiones sec
+cantidadDeConexiones (Escudo als sec) = cantiadDeContexiones sec
+cantidadDeConexiones (Conexion p secI secD) = 1 + cantiadDeContexiones secI + cantiadDeContexiones secD
+
+ejercicio 2)
+foldSector :: (Distancia -> b) -> (Distancia -> b -> b) -> ([Altura] -> b -> b) -> (Peso -> b -> b -> b) -> Sector -> b
+foldSector fb _ _ _ (Base d) = fb d
+foldSector fb ft fe fc (Trayecto d sec) = ft d (foldSector fb ft fe fc sec)
+foldSector fb ft fe fc (Escudo alts sec) = fe alts (foldSector fb ft fe fc sec) 
+foldSector fb ft fe fc (Conexion p secI secD) = fc p (foldSector fb ft fe fc secI) (foldSector fb ft fe fc secD)
+
+ejercicio 3) 
+recSector :: (Distancia -> b) -> 
+        (Distancia -> Sector -> b -> b) -> 
+        ([Altura] -> Sector -> b -> b) -> 
+        (Peso -> Sector -> b -> Sector -> b -> b) -> Sector -> b
+recSector fb _ _ _ (Base d) = fb d
+recSector fb ft fe fc (Tratecto d sec) = ft d sec (recSector fb ft fe fc sec)
+recSector fb ft fe fc (Escudo alts sec) = fe alts sec (recSector fb ft fe fc sec)
+recSector fb ft fe fc (Conexion p secI secD) = fc p secI (recSector fb ft fe fc secI) secD (recSector fb ft fe fc secD)
+
+ejercicio 4)
+alturasCríticas :: Sector -> [Altura]
+alturasCriticas = foldSector 
+                    (const []) 
+                    (\_ altsR -> altsR)
+                    (\alts altsR -> if length alts > 50 
+                                        then alts ++ altsR
+                                        else altsR)
+                    (\p altsRI altsRD -> altsRI ++ altsRD)
+
+ejercicio 5)
+optimizarSector :: Sector -> Sector
+optimizarSector = recSector 
+                    (Base)
+                    (\d sec secR -> Trayecto d secR)
+                    (\alts sec secR -> if null alts 
+                                        then secR
+                                        else Escudo alts secR)
+                    (\p secI secIR secD secDR -> if p == 0
+                                                    then secIR
+                                                    else Conexion p secIR secDR)
+
+ejercicio 6)
+prop : alturasCríticas . optimizarSector = alturasCríticas ?
+dem : por ppio de ext. es equivalente a : 
+    para todo sec :: Sector
+        (alturasCríticas . optimizarSector) sec = alturasCríticas sec ?
+
+por def (.) es equivalente a :
+    para todo sec :: Sector
+        alturasCríticas (optimizarSector sec) = alturasCríticas sec ?
+    
+sea s un Sector cualquiera : 
+    alturasCríticas (optimizarSector s) = alturasCríticas s ?
+
+por induccion estructural sobre s : 
+
+caso base)
+    ¿ alturasCríticas (optimizarSector (Base d)) = alturasCríticas (Base d) ?
+
+caso ind.1)
+    Hi) ¡ alturasCríticas (optimizarSector s) = alturasCríticas s !
+    Te) ¿ alturasCríticas (optimizarSector (Trayecto d s)) = alturasCríticas (Trayecto d s) ?
+
+caso ind.2)
+    Hi) ¡ alturasCríticas (optimizarSector s) = alturasCríticas s !
+    Te) ¿ alturasCríticas (optimizarSector (Escudo alts s)) = alturasCríticas (Escudo alts s) ?
+  
+caso ind.3)
+    Hi.1) ¡ alturasCríticas (optimizarSector sI) = alturasCríticas sI !
+    Hi.2) ¡ alturasCríticas (optimizarSector sD) = alturasCríticas sD !
+    Te) ¿ alturasCríticas (optimizarSector (Conexion p sI sD)) = alturasCríticas (Conexion p sI sD) ?
+
+lema 1)
+    para todo alts. para todo s.
+    alturasCriticas (if null alts 
+                        then s
+                        else Escudo alts s) = alturasCriticas (Escudo alts s)
+
+lema 2)
+    para todo p. para todo sI. para todo sD.
+    alturasCriticas (if p == 0
+                        then sI
+                        else Conexion p sI sD) = alturasCriticas (Conexion p sI sD) 
+   
+dem caso base)
+LADO IZQ:
+    alturasCríticas (optimizarSector (Base d))
+=                                               (optimizarSector.1)   
+    alturasCríticas (recSector 
+                        (Base)
+                        (\d sec secR -> Trayecto d secR)
+                        (\alts sec secR -> if null alts 
+                                            then secR
+                                            else Escudo alts secR)
+                        (\p secI secIR secD secDR -> if p == 0
+                                                        then secIR
+                                                        else Conexion p secIR secDR) (Base d))
+=                                               (recSector.1)
+    alturasCriticas (Base d)
+=                                               (alturasCriticas.1)
+    (foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length altR > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD)) (Base d)
+
+LADO DER:
+    alturasCríticas (Base d)
+=                                               (alturasCriticas.1)
+    (foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length altR > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD)) (Base d)
+
+dem caso ind.1)
+LADO IZQ:
+    alturasCríticas (optimizarSector (Trayecto d s))
+=                                               (optimizarSector.2)
+    alturasCriticas (recSector 
+                    (Base)
+                    (\d sec secR -> Trayecto d secR)
+                    (\alts sec secR -> if null alts 
+                                        then secR
+                                        else Escudo alts secR)
+                    (\p secI secIR secD secDR -> if p == 0
+                                                    then secIR
+                                                    else Conexion p secIR secDR) (Trayecto d s))
+=                                               (recSector.2)
+    alturasCriticas ((\d sec secR -> Trayecto d secR) d s (recSector 
+                                                                    (Base)
+                                                                    (\d sec secR -> Trayecto d secR)
+                                                                    (\alts sec secR -> if null alts 
+                                                                                        then secR
+                                                                                        else Escudo alts secR)
+                                                                    (\p secI secIR secD secDR -> if p == 0
+                                                                                                    then secIR
+                                                                                                    else Conexion p secIR secDR) s))
+=                                               (optimizarSector.1)
+    alturasCriticas ((\d sec secR -> Trayecto d secR) d s (optimizarSector s))
+=                                               (Beta reduccion)
+    alturasCriticas (Trayecto d (optimizarSector s))
+=                                                   (alturasCriticas.1)
+    (foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length altR > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD)) (Trayecto d (optimizarSector s)) 
+=                                                   (foldSector.2)
+    (\_ altsR -> altsR) d (foldSector 
+                            (const []) 
+                            (\_ altsR -> altsR)
+                            (\alts altsR -> if length altR > 50 
+                                                then alts ++ altsR
+                                                else altsR)
+                            (\p altsRI altsRD -> altsRI ++ altsRD)) (optimizarSector s)
+=                                                   (alturasCriticas.1)
+    (\_ altsR -> altsR) d (alturasCriticas (optimizarSector s))
+=                                                   (por beta reduccion)
+    (alturasCriticas (optimizarSector s))
+=                                                   (Hi)
+    alturasCriticas s
+
+LADO DER
+    alturasCríticas (Trayecto d s)
+=                                   (alturasCriticas.1)
+    (foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length altR > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD)) (Trayecto d s)
+=                                   (foldSector.2)
+    (\_ altsR -> altsR) d (foldSector 
+                            (const []) 
+                            (\_ altsR -> altsR)
+                            (\alts altsR -> if length altR > 50 
+                                                then alts ++ altsR
+                                                else altsR)
+                            (\p altsRI altsRD -> altsRI ++ altsRD) s)
+=                                   (alturasCriticas.1)
+    (\_ altsR -> altsR) d (alturasCriticas s)
+=                                   (Beta reduccion)
+    alturasCriticas s
+
+dem caso ind.2)
+LADO IZQ:
+    alturasCríticas (optimizarSector (Escudo alts s)) 
+=                                                       (optimizarSector.1)
+    alturasCriticas (recSector 
+                    (Base)
+                    (\d sec secR -> Trayecto d secR)
+                    (\alts sec secR -> if null alts 
+                                        then secR
+                                        else Escudo alts secR)
+                    (\p secI secIR secD secDR -> if p == 0
+                                                    then secIR
+                                                    else Conexion p secIR secDR) (Escudo alts s))
+=                                                       (recSector.3)
+    alturasCriticas ((\alts sec secR -> if null alts 
+                                        then secR
+                                        else Escudo alts secR) alts s ((recSector 
+                                                                        (Base)
+                                                                        (\d sec secR -> Trayecto d secR)
+                                                                        (\alts sec secR -> if null alts 
+                                                                                            then secR
+                                                                                            else Escudo alts secR)
+                                                                        (\p secI secIR secD secDR -> if p == 0
+                                                                                                        then secIR
+                                                                                                        else Conexion p secIR secDR) s)))
+=                                                       (optimizarSector.1)
+    alturasCriticas ((\alts sec secR -> if null alts 
+                                        then secR
+                                        else Escudo alts secR) alts s (optimizarSector s))
+=                                                       (Beta reduccion)
+    alturasCriticas (if null alts 
+                        then (optimizarSector s)
+                        else Escudo alts (optimizarSector s))
+=                                                       (por lema 1)
+    alturasCriticas (Escudo alts (optimizarSector s))
+=                                                       (alturasCriticas.1)
+    foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length alts > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD) (Escudo alts (optimizarSector s)) 
+=                                                       (foldSector.3)
+    (\alts altsR -> if length alts > 50 
+                        then alts ++ altsR
+                        else altsR) alts (foldSector 
+                                            (const []) 
+                                            (\_ altsR -> altsR)
+                                            (\alts altsR -> if length alts > 50 
+                                                                then alts ++ altsR
+                                                                else altsR)
+                                            (\p altsRI altsRD -> altsRI ++ altsRD) (optimizarSector s))
+=                                                       (alturasCriticas.1)
+    (\alts altsR -> if length alts > 50 
+                        then alts ++ altsR
+                        else altsR) alts (alturasCriticas (optimizarSector s))
+=                                                       (Hi)
+    (\alts altsR -> if length alts > 50 
+                        then alts ++ altsR
+                        else altsR) alts (alturasCriticas s)
+    
+LADO DER:
+    alturasCríticas (Escudo alts s)
+=                                                       (alturasCriticas.1)
+    foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length altR > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD) (Escudo alts s)
+=                                                       (foldSector.3)
+    (\alts altsR -> if length altR > 50 
+                        then alts ++ altsR
+                        else altsR) alts (foldSector 
+                                            (const []) 
+                                            (\_ altsR -> altsR)
+                                            (\alts altsR -> if length altR > 50 
+                                                                then alts ++ altsR
+                                                                else altsR)
+                                            (\p altsRI altsRD -> altsRI ++ altsRD) s)
+=                                                       (alturasCriticas.1)
+    (\alts altsR -> if length altR > 50 
+                        then alts ++ altsR
+                        else altsR) alts (alturasCriticas s)
+
+dem caso ind.3)
+LADO IZQ:
+    alturasCríticas (optimizarSector (Conexion p sI sD))
+=                                                       (optimizarSector.1)
+    alturasCriticas (recSector 
+                        (Base)
+                        (\d sec secR -> Trayecto d secR)
+                        (\alts sec secR -> if null alts 
+                                            then secR
+                                            else Escudo alts secR)
+                        (\p secI secIR secD secDR -> if p == 0
+                                                        then secIR
+                                                        else Conexion p secIR secDR) (Conexion p sI sD))
+=                                                       (recSector.4)
+    alturasCriticas ((\p secI secIR secD secDR -> if p == 0
+                                                    then secIR) 
+                                                    p
+                                                    sI
+                                                    (recSector 
+                                                        (Base)
+                                                        (\d sec secR -> Trayecto d secR)
+                                                        (\alts sec secR -> if null alts 
+                                                                            then secR
+                                                                            else Escudo alts secR)
+                                                        (\p secI secIR secD secDR -> if p == 0
+                                                                                        then secIR
+                                                                                        else Conexion p secIR secDR) sI)
+                                                    sD
+                                                    (recSector 
+                                                        (Base)
+                                                        (\d sec secR -> Trayecto d secR)
+                                                        (\alts sec secR -> if null alts 
+                                                                            then secR
+                                                                            else Escudo alts secR)
+                                                        (\p secI secIR secD secDR -> if p == 0
+                                                                                        then secIR
+                                                                                        else Conexion p secIR secDR) sD))
+=                                                       (optimizarSector.1)
+    alturasCriticas ((\p secI secIR secD secDR -> if p == 0
+                                                    then secIR
+                                                    else Conexion p secIR secDR) p sI (optimizarServidor sI) sD (optimizarServidor sD))
+=                                                       (Beta reduccion)
+    alturasCriticas (if p == 0
+                        then (optimizarServidor sI)
+                        else Conexion p (optimizarServidor sI) (optimizarServidor sD)) 
+=                                                       (lema 2)
+    alturasCriticas (Conexion p (optimizarServidor sI) (optimizarServidor sD))
+=                                                       (alturasCriticas.1)
+    foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length alts > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD) (Conexion p (optimizarServidor sI) (optimizarServidor sD))
+=                                                       (foldSector.4)
+    (\p altsRI altsRD -> altsRI ++ altsRD) p (foldSector 
+                                                (const []) 
+                                                (\_ altsR -> altsR)
+                                                (\alts altsR -> if length alts > 50 
+                                                                    then alts ++ altsR
+                                                                    else altsR)
+                                                (\p altsRI altsRD -> altsRI ++ altsRD) (optimizarServidor sI)) 
+                                             (foldSector 
+                                                (const []) 
+                                                (\_ altsR -> altsR)
+                                                (\alts altsR -> if length alts > 50 
+                                                                    then alts ++ altsR
+                                                                    else altsR)
+                                                (\p altsRI altsRD -> altsRI ++ altsRD) (optimizarServidor sD))
+=                                                       (alturasCriticas.1)
+    (\p altsRI altsRD -> altsRI ++ altsRD) p (alturasCriticas (optimizarServidor sI)) (alturasCriticas (optimizarServidor sD))
+=                                                       (por Hi.1 y Hi.2)
+    (\p altsRI altsRD -> altsRI ++ altsRD) p (alturasCriticas sI) (alturasCriticas sD)
+
+LADO DER:
+    alturasCríticas (Conexion p sI sD)
+=                                                       (alturasCriticas.1)
+    foldSector 
+        (const []) 
+        (\_ altsR -> altsR)
+        (\alts altsR -> if length alts > 50 
+                            then alts ++ altsR
+                            else altsR)
+        (\p altsRI altsRD -> altsRI ++ altsRD) (Conexion p sI sD)
+=                                                       (foldSector.4)
+    (\p altsRI altsRD -> altsRI ++ altsRD) p ((foldSector 
+                                                (const []) 
+                                                (\_ altsR -> altsR)
+                                                (\alts altsR -> if length alts > 50 
+                                                                    then alts ++ altsR
+                                                                    else altsR)
+                                                (\p altsRI altsRD -> altsRI ++ altsRD) sI) 
+                                             (foldSector 
+                                                (const []) 
+                                                (\_ altsR -> altsR)
+                                                (\alts altsR -> if length alts > 50 
+                                                                    then alts ++ altsR
+                                                                    else altsR)
+                                                (\p altsRI altsRD -> altsRI ++ altsRD) sD))
+=                                                       (alturasCriticas.1)
+    (\p altsRI altsRD -> altsRI ++ altsRD) p (alturasCriticas sI) (alturasCriticas sD)

@@ -1,11 +1,15 @@
 prop : ¿ Para todo i, intensidadRestante i . combinarFirewalls = intensidadRestante i ?
+
 dem : por ppio de ext. es equivalente a 
-	Para todo red :: Red. Para todo i :: Ataque, (intensidadRestante i . combinarFirewalls) red = (intensidadRestante i) red ?
+	¿ Para todo red :: Red. Para todo i :: Ataque. 
+		(intensidadRestante i . combinarFirewalls) red = (intensidadRestante i) red ?
+
 por def de (.) es equivalente a:
-	Para todo red :: Red. Para todo i :: Ataque, (intensidadRestante i (combinarFirewalls red)  = (intensidadRestante i) red ?
+	¿ Para todo red :: Red. Para todo i :: Ataque.
+		(intensidadRestante i (combinarFirewalls red)  = (intensidadRestante i) red ?
 
 sea r una red cualquiera y a un ataque cualquiera. 
-intensidadRestante a (combinarFirewalls r) = (intensidadRestante a) r ?
+	¿ intensidadRestante a (combinarFirewalls r) = (intensidadRestante a) r ?
 
 por induccion estructural sobre r: 
 
@@ -31,7 +35,7 @@ caso ind.3)
     Hi.2) ¡para todo a. 
           intensidadRestante a (combinarFirewalls r) = intensidadRestante a rD !
     Te.) ¿ para todo a.
-          intensidadRestante a (combinarFirewalls (Firewall f r)) = intensidadRestante a (Switch f rI rD) 
+          intensidadRestante a (combinarFirewalls (Firewall f r)) = intensidadRestante a (Switch f rI rD)
 
 lema 1) ¡para todo x. para todo f. para todo r.
 			intensidadRestante x (juntarFirewalls f r) = intensidadRestante x (Firewall f r) !
@@ -140,3 +144,13 @@ LADO IZQ
 LADO DER
   itensidadRestante a (Firewall fb red)
 
+La propiedad ¿para todo e :: S. P(e)? es EQUIVALENTE a TODOS estos casos JUNTOS:
+  "Siendo e' un S cualquiera, 
+      CB) Si e' es un caso base, se prueba ¿P(e')? directamente.
+      CI) Si e' es un caso inductivo, y sus partes inductivas son e1 ... ek, se prueba que
+            HI.1) Suponiendo ¡P(e1)!
+            ...
+            HI.k) Suponiendo ¡P(ek)!
+            TI) Vale que ¿P(e')?"
+ESA es la interpretación correcta del principio de inducción
+Básicamente, el "sea" es parte del uso del principio...

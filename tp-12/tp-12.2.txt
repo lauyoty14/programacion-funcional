@@ -417,8 +417,308 @@ tables = foldQ
 
 ii)
 execute :: Query a b -> Table a b
-execute = foldQ (id) (product) (project) (select)
+execute = foldQ id (product) (project) (select)
 
 iii)
+recQ :: ([Record f v] -> b) 
+     -> (Query f v -> Query f v -> b -> b -> b) 
+     -> ((f -> Bool) -> Query f v -> b -> b) 
+     -> ((Record f v -> Bool) -> Query f v -> b -> b) 
+     -> Query f v -> b
+recQ ft fprod fproj fs (Table rs)        = ft rs
+recQ ft fprod fproj fs (Product q1 q2)  = fprod q1 q2 (recQ ft fprod fproj fs q1) (recQ ft fprod fproj fs q2)
+recQ ft fprod fproj fs (Projection h q) = fproj h q (recQ ft fprod fproj fs q)
+recQ ft fprod fproj fs (Selection h q)  = fs h q (recQ ft fprod fproj fs q)
+
 compact :: Query a b -> Query a b
-compact = foldQ
+compact = recQ 
+            (Table)
+            (\_ _ query1 query2 -> Product query1 query2)
+            (\f query cq -> case cq of 
+                            Projection g query2 -> Projection (conjunct f g) query2
+                            _ -> Projection f cq)
+            (\f query cq -> case query of 
+                            Selection g query2 -> Selection (conjunct f g) query2
+                            _ -> Projection f cq)
+
+b) prop: ¿ execute . compact = execute ?
+dem : por ppio de ext. es equivalente a
+    ¿ para todo query :: Query a b. (execute . compact) query = execute query ?
+
+por def (.) es equivalente a : 
+    ¿ para todo query 
+        execute (compact query) = execute query ? 
+
+por induccion estructural sobre q : 
+
+caso base) 
+    ¿ execute (compact (Table rs)) = execute (Table rs) ? 
+
+caso ind.1)
+    Hi.1) ¡execute (compact (q1)) = execute (q1)! 
+    Hi.2) ¡execute (compact (q2)) = execute (q2)!
+    Te) ¿ execute (compact (Product q1 q2)) = execute (Product q1 q2) ? 
+
+caso ind.2) 
+    Hi.1) ¡execute (compact (q)) = execute (q)! 
+    Te) ¿ execute (compact (Projection f q)) = execute (Projection f q) ? 
+    
+caso ind.3)
+    Hi.1) ¡execute (compact (q)) = execute (q)! 
+    Te) ¿ execute (compact (Selection f q)) = execute (Selection f q) ? 
+
+sea q un Query a b cualquiera, Qvq :
+    ¿ execute . compact q = execute q ? 
+
+lema 1)
+    ¡para todo cq. para todo f. 
+        execute (case cq of 
+                    Projection g q' -> Projection (conjunct f g) q' 
+                    _ -> Projection f cq) = project f (execute cq) !
+
+lema 2)
+    ¡para too cq. para todo f.
+        execute (case cq of 
+                    Selection g q' -> Selection (conjunct f g) q' 
+                    _ -> Selection f cq) = select f (execute cq) !
+        
+
+dem caso base)
+LADO IZQ:
+    execute (compact (Table rs))
+    =                           (compact.1)
+    execute (recQ    
+                (Table)
+                (\_ _ query1 query2 -> Product query1 query2)
+                (\f query -> case query of 
+                                Projection g query2 -> Projection (conjunct f g) query2
+                                _ -> Projection f query)
+                (\f query -> case query of 
+                                Selection g query2 -> Selection (conjunct f g) query2
+                                _ -> Selection f query) (Table rs))
+    =                            (recQ.1)
+    execute (Table rs)
+
+LADO DER:
+    execute (Table rs)
+
+caso ind.1)
+LADO IZQ: 
+    execute (compact (Product q1 q2))
+    =                                 (compact.1)
+    execute (recQ 
+            (Table)
+            (\_ _ query1 query2 -> Product query1 query2)
+            (\f query -> case query of 
+                            Projection g query2 -> Projection (conjunct f g) query2
+                            _ -> Projection f query)
+            (\f query -> case query of 
+                            Selection g query2 -> Selection (conjunct f g) query2
+                            _ -> Projection f query) (Product q1 q2))
+    =                                  (recQ.2)
+    execute ((\_ _ query1 query2 -> Product query1 query2) q1 q2 
+                (recQ 
+                    (Table)
+                    (\_ _ query1 query2 -> Product query1 query2)
+                    (\f query -> case query of 
+                                    Projection g query2 -> Projection (conjunct f g) query2
+                                    _ -> Projection f query)
+                    (\f query -> case query of 
+                                    Selection g query2 -> Selection (conjunct f g) query2
+                                    _ -> Projection f query) q1)
+                (recQ 
+                    (Table)
+                    (\_ _ query1 query2 -> Product query1 query2)
+                    (\f query -> case query of 
+                                    Projection g query2 -> Projection (conjunct f g) query2
+                                    _ -> Projection f query)
+                    (\f query -> case query of 
+                                    Selection g query2 -> Selection (conjunct f g) query2
+                                    _ -> Projection f query) q2))
+    =                                   (compact)
+    execute ((\_ _ query1 query2 -> Product query1 query2) q1 q2 (compact q1) (compact q2))
+    =                                                                                       (Beta reduccion)
+    execute (Product (compact q1) (compact q2))
+    =                                                                                       (execute.1)
+    foldQ id (product) (project) (select) (Product (compact q1) (compact q2))
+    =                                                                                       (foldQ.2)
+    product (foldQ id (product) (project) (select) (compact q1)) (foldQ id (product) (project) (select) (compact q2))
+    =                                                                                       (execute.1)
+    product (execute (compact q1)) (execute (compact q2))
+    =                                                                                       (por Hi.1 y Hi.2)
+    product (execute q1) (execute q2)
+
+LADO DER:
+    execute (Product q1 q2)
+    =                                   (execute.1)
+    foldQ id (product) (project) (select) (Product q1 q2)
+    =                                   (foldQ.2)
+    product (foldQ id (product) (project) (select) q1) (foldQ id (product) (project) (select) q2)
+    =                                   (execute.1)
+    product (execute q1) (execute q2)
+
+dem caso ind.2)
+LADO IZQ: 
+    execute (compact (Projection f q))
+    =                                   (compact.1)
+    execute (recQ 
+            (Table)
+            (\_ _ query1 query2 -> Product query1 query2)
+            (\f query cq -> case cq of 
+                                Projection g query2 -> Projection (conjunct f g) query2
+                                _ -> Projection f cq)
+            (\f query cq -> case cq of 
+                                Selection g query2 -> Selection (conjunct f g) query2
+                                _ -> Projection f cq) (Projection f q))
+    =                                    (recQ.2)
+    execute ((\f query cq -> case cq of 
+                                Projection g query2 -> Projection (conjunct f g) query2
+                                _ -> Projection f cq) (Projection f q))
+    =                                     (Beta reduccion)
+    execute (case (recQ 
+                    (Table)
+                    (\_ _ query1 query2 -> Product query1 query2)
+                    (\f query cq -> case cq of 
+                                        Projection g query2 -> Projection (conjunct f g) query2
+                                        _ -> Projection f cq)
+                    (\f query cq -> case cq of 
+                                        Selection g query2 -> Selection (conjunct f g) query2
+                                        _ -> Projection f cq) q) of
+                                                                    Projection g query2 -> Projection (conjunct f g) query2
+                                                                    _ -> Projection f cq)
+    =                                       (comapct.1)
+    execute (case compact q of
+                Projection g query2 -> Projection (conjunct f g) query2
+                _ -> Projection f cq)
+    =                                       (por lema 1)
+    project f (execute (compact q))
+    =                                       (por Hi)
+    project f (execute q)
+
+    
+LADO DER:
+    execute (Projection f q) 
+    =                                       (execute.1)
+    foldQ id (product) (project) (select) (Projection f q)  
+    =                                       (foldQ.3)
+    project f (foldQ id (product) (project) (select) q)
+    =                                       (execute.1)
+    project f (execute q)
+     
+dem caso ind.3)
+LADO IZQ: 
+    execute (compact (Selection f q))
+    =                                       (compact.1)
+    execute (recQ 
+            (Table)
+            (\_ _ query1 query2 -> Product query1 query2)
+            (\f query cq -> case cq of 
+                            Projection g query2 -> Projection (conjunct f g) query2
+                            _ -> Selection f cq)
+            (\f query cq -> case cq of 
+                            Selection g query2 -> Selection (conjunct f g) query2
+                            _ -> Selection f cq) 
+                (Selection f q))
+    =                                           (recQ.4)
+    execute ((\f query cq -> case cq of 
+                            Selection g query2 -> Selection (conjunct f g) query2
+                            _ -> Selection f cq) 
+                f q 
+                (recQ 
+                    (Table)
+                    (\_ _ query1 query2 -> Product query1 query2)
+                    (\f query cq -> case cq of 
+                                    Projection g query2 -> Projection (conjunct f g) query2
+                                    _ -> Selection f cq)
+                    (\f query cq -> case cq of 
+                                    Selection g query2 -> Selection (conjunct f g) query2
+                                    _ -> Selection f cq) q))
+    =                                           (compact.1)
+    execute ((\f query cq -> case cq of 
+                            Selection g query2 -> Selection (conjunct f g) query2
+                            _ -> Selection f cq) 
+                f q (compact q))
+    =                                           (Beta reduccion)
+    execute (case (compact q) of 
+                Selection g query2 -> Selection (conjunct f g) query2
+                _ -> Selection f (compact q))
+    =                                           (por lema 2)
+    select f (execute (compact q))
+    =                                           (por Hi.1)
+    select f (execute q)
+
+LADO DER: 
+    execute (Selection f q)
+    =                                           (execute.4)
+    foldQ id (product) (project) (select) (Selection f q)
+    =                                           (foldQ.4)
+    select f (foldQ id (product) (project) (select) q)
+    =                                           (execute.1)
+    select f (execute q)
+
+-------------------------------------------------------------------------------------------------------------
+
+lema 1)
+Prop: ¿para todo cq. para todo f. 
+        execute (case cq of 
+                    Projection g q' -> Projection (conjunct f g) q' 
+                    _ -> Projection f cq) = project f (execute cq) ?
+dem: sea q un query cualquiera, sea fb una funcion cualquiera.
+       ¿ execute (case q of 
+                    Projection g q' -> Projection (conjunct fb g) q' 
+                    _ -> Projection fb q) = project fb (execute q) ?
+
+por planteo de casos)
+
+caso 1. q = Projection g q')
+        ¿ execute (case Projection g q' of 
+                    Projection g q' -> Projection (conjunct fb g) q' 
+                    _ -> Projection fb (Projection g q')) = project fb (execute (Projection g q')) ?
+
+caso 2. q = query)
+        ¿ execute (case query of 
+                    Projection g q' -> Projection (conjunct fb g) q' 
+                    _ -> Projection fb query = project fb (execute query) ?
+
+dem caso.1)
+LADO IZQ:
+    execute (case Projection g q' of 
+                        Projection g q' -> Projection (conjunct fb g) q' 
+                        _ -> Projection fb (Projection g q'))
+    =                                                         (case.1)                    
+    execute (Projection (cojunct fb g) q')
+    =                                                       (execute.1)
+    foldQ id (product) (project) (select) (Projection (cojunct fb g) q')
+    =                                                       (foldQ.3)
+    project (conjunct fb g) (foldQ id (product) (project) (select) q')
+    =                                                       (execute.1)
+    project (conjunct fb g) (execute q')
+    =                                             (por lema. project f . project g = project (conjunct f g))
+    project fb (project g (execute q'))
+
+LADO DER:
+    project fb (execute (Projection g q'))
+    =                                                       (execute.1)
+    project fb (foldQ id (product) (project) (select) (Projection g q'))
+    =                                                       (fold.3)
+    project fb (project g (foldQ id (product) (project) (select) q'))
+    =                                                       (execute.1)
+    project fb (project g (execute q'))
+
+dem caso.2)
+LADO IZQ:
+    execute (case query of 
+                Projection g q' -> Projection (conjunct fb g) q' 
+                _ -> Projection fb query)
+    =                                                       (case.1)
+    execute (Projection fb query)
+    =                                                       (execute.1)                
+    foldQ id (product) (project) (select) (Projection fb query)
+    =                                                       (foldQ.1)
+    project fb (foldQ id (product) (project) (select) query)
+    =                                                       (execute.1)
+    project fb (execute query)
+
+LADO DER:    
+    project fb (execute query)
+

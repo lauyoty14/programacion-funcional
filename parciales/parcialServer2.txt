@@ -1,0 +1,80 @@
+ejercicio 1)
+a)
+combinarFirewalls :: Red -> Red
+combinarFirewalls (Terminal p) = Terminal p
+combinarFirewalls (Servidor p red) = Servidor p (combinarFirewalls red)
+combinarFirewalls (Firewall f red) = juntarFirewalls f (combinarFirewalls red)
+combinarFirewalls (Switch f redI redD) = Switch f (combinarFirewalls redI) (combinarFirewalls redD)
+
+juntarFirewalls :: (Ataque -> Bool) -> Red -> Red
+juntarFirewalls f (Firewall g red) = Firewall (\a -> f a && g a) red
+juntarFirewalls f red              = Firewall f red
+
+b)
+intensidadRestante :: Ataque -> Red -> Maybe Ataque
+intensidadRestante a (Terminal p)     = Just (a - p)
+intensidadRestante a (Servidor p red) = 
+    case intensidadRestante a red of
+        Just i -> Just (a + p + i)
+        Nothing -> Nothing
+intensidadRestante a (Firewall f red) =
+    if f a
+        then intensidadRestante a red
+        else Nothing
+intensidadRestante a (Switch f rI rD) = 
+    case f a of
+        Der -> case intensidadRestante a rD of
+                    Just iD -> intensidadRestante iD rI
+                    Nothing -> Nothing
+        _   -> case intensidadRestante a rI of
+                    Just iI -> intensidadRestante iI rD
+                    Nothing -> Nothing
+            
+c)
+pasosHastaBloqueo :: Ataque -> Red -> Maybe Int
+pasosHastaBloqueo a red = 
+    case pasosRec a red of 
+        (i , Nothing) -> i
+        (_ , _)       -> Nothing
+
+pasosRec :: Ataque -> Red -> (Int, Maybe Ataque)
+pasosRec a (Terminal p)     = (0 , Just (a - p))
+pasosRec a (Servidor p red) = let (pasos , ata) = pasosRec (a + p) in (pasos + 1 , ata)
+pasosRec a (Firewall f red) = 
+    if f a 
+        then let (pasos, ata) = pasosRec a red in (pasos + 1 , ata)
+        else (0, Nothing) 
+pasosRec a (Switch f rI rD) = 
+    case f a of
+        Der -> case pasosRec a rD of 
+                (pasosD , Nothing)  -> (pasosI , Nothing)
+                (pasosD , Just ataD) -> let (pasosI, ataI) = pasosRec ataD rI in 
+                                            (pasosI + pasosD + 1 , ataI)
+        _   -> case pasosRec a rI of 
+                (pasosI , Nothing)  -> (pasosI , Nothing)
+                (pasosI , Just ataI) -> let (pasosD, ataD) = pasosRec ataI rD in 
+                                            (pasosI + pasosD + 1 , ataD)
+
+rutasAServidores :: Ataque -> Red -> [Ruta]
+rutasAServidores a red = fst (rutasRec a red)
+
+rutasRec :: Ataque -> Red -> ([Ruta] , Maybe ataque)
+rutasRec a (Terminal p)     = ([] , Just (a - p)) 
+rutasRec a (Servidor p red) = 
+    let (rutas , ata) = rutasRec (a + p) red 
+        in (map (Forward:) rutas , ata)
+rutasRec a (Firewall f red) =
+    if f a 
+        then (rutas , ata) = rutasRec a red 
+        in (map (Forward:) rutas , ata) 
+        else ([] , Nothing)
+rutasRec a (Switch f rI rD) =
+    case f a of 
+        Der -> case rutasRec a rD of 
+                    (rutasD , Nothing)  -> (map (Der:) rutasD , Nothing) 
+                    (rutasD , Just ataD) -> let (rutasI , ataI) = rutasRec ataD rI 
+                                                in ((map (Der:) rutasD) ++ (map (Izq:) rutasI) , ataI)
+        _ -> case rutasRec a rI of 
+                    (rutasI , Nothing)  -> (map (Izq:) rutasI , Nothing) 
+                    (rutasI , Just ataI) -> let (rutasD , ataD) = rutasRec ataI rD 
+                                                in ((map (Der:) rutasD) ++ (map (Izq:) rutasI) , ataD)
